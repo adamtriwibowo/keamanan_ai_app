@@ -9,6 +9,16 @@ Aplikasi ini berfungsi sebagai admin tools untuk mendeteksi kebocoran data mengg
 - GraphQL API service
 - Web Scraping dengan Puppeteer
 - gRPC service dengan Python
+- AI Analysis (analisis data menggunakan kecerdasan buatan)
+
+## AI Analysis
+
+Aplikasi ini dilengkapi dengan fitur AI Analysis untuk:
+- Analisis pola kebocoran data
+- Deteksi data sensitif yang terekspos
+- Klasifikasi tingkat risiko kebocoran
+- Rekomendasi tindakan mitigasi
+- Generate laporan analisis otomatis
 
 ## Tech Stack
 
@@ -32,6 +42,7 @@ Aplikasi ini berfungsi sebagai admin tools untuk mendeteksi kebocoran data mengg
 - helmet - Security headers
 - morgan - HTTP logging
 - serpapi - Search engine API
+- openai - AI integration (GPT models)
 
 ### Dev Dependencies
 - playwright - Browser automation
@@ -87,6 +98,21 @@ node SERVICES/scrapping/puppeteer.js
 #### 5. Dorking
 ```bash
 node SERVICES/dorking/index.js
+```
+
+#### 6. AI Analysis
+```bash
+# Via GraphQL API
+mutation {
+  analyzeData(input: {
+    data: "data yang akan dianalisis"
+    type: "email|phone|address"
+  }) {
+    result
+    riskLevel
+    recommendations
+  }
+}
 ```
 
 ### Environment Variables
