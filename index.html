@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analisis Kebocoran Data</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1f2937;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --blue: #58a6ff;
+      --orange: #f0883e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .logo-icon {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, #1a3a5c, #0d2137);
+      border: 1px solid var(--blue);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+      margin-top: 1px;
+    }
+
+    .sse-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .sse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+    .sse-dot.on  { background: var(--green); animation: blink 2s ease-in-out infinite; }
+    .sse-dot.off { background: var(--red); }
+
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.3; }
+    }
+
+    /* ── Layout ── */
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 28px 60px;
+    }
+
+    /* ── Stats ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .stat.s-total::before  { background: var(--blue); }
+    .stat.s-bocor::before  { background: var(--red); }
+    .stat.s-aman::before   { background: var(--green); }
+    .stat.s-pending::before { background: var(--yellow); }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .stat-val {
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat.s-total  .stat-val { color: var(--blue); }
+    .stat.s-bocor  .stat-val { color: var(--red); }
+    .stat.s-aman   .stat-val { color: var(--green); }
+    .stat.s-pending .stat-val { color: var(--yellow); }
+
+    .stat-icon {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 28px;
+      opacity: 0.12;
+    }
+
+    /* ── Panel ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      gap: 10px;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-actions { display: flex; gap: 8px; align-items: center; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 7px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: filter 0.15s, opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) { filter: brightness(1.15); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-green  { background: var(--green);  color: #000; }
+    .btn-red    { background: var(--red);    color: #fff; }
+    .btn-blue   { background: var(--blue);   color: #000; }
+    .btn-ghost  { background: transparent;   color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--muted); filter: none; }
+
+    /* ── Table ── */
+    .tbl-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead { background: rgba(255,255,255,0.02); }
+
+    th {
+      padding: 9px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 11px 14px;
+      border-top: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:hover td { background: rgba(255,255,255,0.025); }
+
+    .mono { font-family: 'Consolas', monospace; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .b-wait    { background: rgba(210,153,34,.15); color: var(--yellow); }
+    .b-scan    { background: rgba(88,166,255,.15);  color: var(--blue); }
+    .b-done    { background: rgba(63,185,80,.15);   color: var(--green); }
+    .b-bocor   { background: rgba(248,81,73,.15);   color: var(--red); }
+    .b-aman    { background: rgba(63,185,80,.15);   color: var(--green); }
+
+    /* ── Leak tags ── */
+    .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+
+    .tag {
+      background: rgba(248,81,73,.08);
+      border: 1px solid rgba(248,81,73,.25);
+      color: var(--red);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 10px;
+    }
+
+    /* ── Checkbox ── */
+    input[type=checkbox] {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--blue);
+      cursor: pointer;
+    }
+
+    /* ── Empty ── */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty .ei { font-size: 38px; margin-bottom: 12px; }
+    .empty p   { font-size: 13px; }
+
+    /* ── Form ── */
+    .form-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      padding: 16px 18px;
+    }
+
+    .fg { flex: 1; }
+
+    .fg label {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .fg input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 11px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .fg input:focus { border-color: var(--blue); }
+    .fg input::placeholder { color: var(--muted); }
+
+    /* ── Toast ── */
+    .toast-wrap {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 999;
+    }
+
+    .toast {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 15px;
+      font-size: 13px;
+      min-width: 250px;
+      max-width: 340px;
+      animation: tin .2s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .toast.ok  { border-left: 3px solid var(--green); }
+    .toast.err { border-left: 3px solid var(--red); }
+    .toast.inf { border-left: 3px solid var(--blue); }
+
+    @keyframes tin {
+      from { transform: translateX(110%); opacity: 0; }
+      to   { transform: translateX(0);   opacity: 1; }
+    }
+
+    /* ── Last updated ── */
+    .last-upd {
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ── Select info ── */
+    .sel-info {
+      font-size: 12px;
+      color: var(--muted);
+      display: none;
+      align-items: center;
+      gap: 6px;
+    }
+    .sel-info.show { display: flex; }
+    .sel-count { color: var(--blue); font-weight: 600; }
+
+    @media (max-width: 768px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .form-row { flex-direction: column; }
+      .panel-head { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🔒</div>
+    <div>
+      <div>Analisis Kebocoran Data</div>
+      <div class="logo-sub">OSINT Data Leak Monitoring</div>
+    </div>
+  </div>
+  <div class="sse-pill">
+    <div class="sse-dot" id="sseDot"></div>
+    <span id="sseLabel">Menghubungkan...</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat s-total">
+      <div class="stat-label">Total Dipantau</div>
+      <div class="stat-val" id="sTotal">–</div>
+      <div class="stat-icon">📋</div>
+    </div>
+    <div class="stat s-bocor">
+      <div class="stat-label">Terdeteksi Bocor</div>
+      <div class="stat-val" id="sBocor">–</div>
+      <div class="stat-icon">⚠️</div>
+    </div>
+    <div class="stat s-aman">
+      <div class="stat-label">Aman</div>
+      <div class="stat-val" id="sAman">–</div>
+      <div class="stat-icon">✅</div>
+    </div>
+    <div class="stat s-pending">
+      <div class="stat-label">Belum Dicek</div>
+      <div class="stat-val" id="sPending">–</div>
+      <div class="stat-icon">⏳</div>
+    </div>
+  </div>
+
+  <!-- Table panel -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">
+        📊 Data Monitoring
+        <span class="last-upd" id="lastUpd"></span>
+      </div>
+      <div class="panel-actions">
+        <div class="sel-info" id="selInfo">
+          <span class="sel-count" id="selCount">0</span> dipilih
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;">
+          <input type="checkbox" id="selAll"> Pilih Semua
+        </label>
+        <button class="btn btn-blue" id="btnScan">🔍 Scan Dipilih</button>
+        <button class="btn btn-ghost" id="btnAnalyze">🤖 Analisis AI</button>
+        <button class="btn btn-ghost" id="btnRefresh">↻ Refresh</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:36px"></th>
+            <th>No Telepon</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Kebocoran</th>
+            <th>Sumber Bocor</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="6">
+            <div class="empty">
+              <div class="ei">📡</div>
+              <p>Menunggu data dari server...</p>
+            </div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- AI Analysis panel -->
+  <div class="panel" id="aiPanel" style="display:none">
+    <div class="panel-head">
+      <div class="panel-title">🤖 Analisis AI</div>
+      <div class="panel-actions">
+        <div id="aiRiskBadge"></div>
+      </div>
+    </div>
+    <div style="padding:18px 20px">
+      <div id="aiLoading" style="display:none;color:var(--muted);font-size:13px">⟳ Menganalisis data dengan AI...</div>
+      <div id="aiResult" style="display:none">
+        <p style="font-size:13px;line-height:1.7;margin-bottom:14px" id="aiSummary"></p>
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Rekomendasi</div>
+        <ul id="aiRecs" style="list-style:none;display:flex;flex-direction:column;gap:6px"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add form panel -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">➕ Tambah Data Monitor</div>
+    </div>
+    <div class="form-row">
+      <div class="fg">
+        <label>No Telepon</label>
+        <input id="fPhone" type="text" placeholder="08xxxxxxxxxx">
+      </div>
+      <div class="fg">
+        <label>Email Target</label>
+        <input id="fEmail" type="email" placeholder="user@email.com">
+      </div>
+      <button class="btn btn-green" id="btnAdd">Tambah</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+  const BASE    = 'http://localhost:5000';
+  const U_EMAIL = 'ferta966@gmail.com';
+
+  let rows     = [];
+  let selected = new Set();
+
+  /* ── GraphQL ── */
+  async function gql(query, vars = {}) {
+    const r = await fetch(`${BASE}/graphql`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables: vars })
+    });
+    const j = await r.json();
+    if (j.errors) throw new Error(j.errors[0].message);
+    return j.data;
+  }
+
+  /* ── Toast ── */
+  function toast(msg, type = 'inf') {
+    const icons = { ok: '✅', err: '❌', inf: 'ℹ️' };
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+    document.getElementById('toasts').appendChild(el);
+    setTimeout(() => el.remove(), 4500);
+  }
+
+  /* ── Badges ── */
+  function statusBadge(s) {
+    const map = {
+      1: ['b-wait', '⏳ Menunggu'],
+      2: ['b-scan', '⟳ Scanning'],
+      3: ['b-done', '✓ Selesai'],
+    };
+    const [cls, txt] = map[s] || ['b-wait', s];
+    return `<span class="badge ${cls}">${txt}</span>`;
+  }
+
+  function leakBadge(ls) {
+    return ls === 1
+      ? `<span class="badge b-bocor">⚠ Bocor</span>`
+      : `<span class="badge b-aman">✓ Aman</span>`;
+  }
+
+  function leakTags(locs) {
+    if (!locs || locs.length === 0)
+      return `<span style="color:var(--muted);font-size:11px">—</span>`;
+    return `<div class="tags">${locs.map(l => `<span class="tag">${l}</span>`).join('')}</div>`;
+  }
+
+  /* ── Render ── */
+  function render(data) {
+    rows = data || [];
+    updateStats(rows);
+    updateSelInfo();
+
+    const tbody = document.getElementById('tbody');
+
+    if (rows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6">
+        <div class="empty"><div class="ei">📭</div><p>Belum ada data yang dipantau</p></div>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td><input type="checkbox" class="rchk" data-p="${r.phone}" ${selected.has(r.phone) ? 'checked' : ''}></td>
+        <td class="mono">${r.phone}</td>
+        <td>${r.email}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td>${leakBadge(r.leakStatus)}</td>
+        <td>${leakTags(r.leakLocation)}</td>
+      </tr>
+    `).join('');
+
+    document.querySelectorAll('.rchk').forEach(cb => {
+      cb.addEventListener('change', () => {
+        cb.checked ? selected.add(cb.dataset.p) : selected.delete(cb.dataset.p);
+        syncSelAll();
+        updateSelInfo();
+      });
+    });
+
+    syncSelAll();
+
+    // last updated
+    const now = new Date().toLocaleTimeString('id-ID');
+    document.getElementById('lastUpd').innerHTML =
+      `<span>· Diperbarui ${now}</span>`;
+  }
+
+  function updateStats(data) {
+    document.getElementById('sTotal').textContent   = data.length;
+    document.getElementById('sBocor').textContent   = data.filter(d => d.leakStatus === 1).length;
+    document.getElementById('sAman').textContent    = data.filter(d => d.status === 3 && d.leakStatus !== 1).length;
+    document.getElementById('sPending').textContent = data.filter(d => d.status === 1).length;
+  }
+
+  function updateSelInfo() {
+    const n = selected.size;
+    document.getElementById('selInfo').classList.toggle('show', n > 0);
+    document.getElementById('selCount').textContent = n;
+  }
+
+  function syncSelAll() {
+    document.getElementById('selAll').checked =
+      rows.length > 0 && rows.every(r => selected.has(r.phone));
+  }
+
+  /* ── Select all ── */
+  document.getElementById('selAll').addEventListener('change', function () {
+    this.checked ? rows.forEach(r => selected.add(r.phone)) : selected.clear();
+    render(rows);
+  });
+
+  /* ── Load data ── */
+  async function loadData() {
+    try {
+      const d = await gql(`
+        query($e: String!) {
+          getUserLeak(userEmail: $e) { phone email status leakStatus leakLocation }
+        }`, { e: U_EMAIL });
+      render(d.getUserLeak || []);
+    } catch (e) {
+      toast('Gagal memuat: ' + e.message, 'err');
+    }
+  }
+
+  /* ── SSE ── */
+  function connectSSE() {
+    const dot   = document.getElementById('sseDot');
+    const label = document.getElementById('sseLabel');
+    const es    = new EventSource(`${BASE}/events`);
+
+    es.onopen = () => {
+      dot.className = 'sse-dot on';
+      label.textContent = 'SSE Terhubung (Live)';
+    };
+
+    es.onmessage = ev => {
+      try {
+        const data = JSON.parse(ev.data);
+        render(data);
+      } catch {}
+    };
+
+    es.onerror = () => {
+      dot.className = 'sse-dot off';
+      label.textContent = 'SSE Terputus';
+    };
+  }
+
+  /* ── Scan ── */
+  document.getElementById('btnScan').addEventListener('click', async () => {
+    if (selected.size === 0) { toast('Pilih minimal 1 data untuk di-scan', 'err'); return; }
+    const btn = document.getElementById('btnScan');
+    btn.disabled = true;
+    btn.textContent = '⟳ Scanning...';
+    try {
+      const d = await gql(`
+        mutation($e: String!, $p: [String!]) {
+          updateLeakStatus(userEmail: $e, phone: $p) { message }
+        }`, { e: U_EMAIL, p: [...selected] });
+      toast(d.updateLeakStatus?.message || 'Scan selesai', 'ok');
+      selected.clear();
+      await loadData();
+    } catch (e) {
+      toast('Scan gagal: ' + e.message, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔍 Scan Dipilih';
+    }
+  });
+
+  /* ── Refresh ── */
+  document.getElementById('btnRefresh').addEventListener('click', loadData);
+
+  /* ── Add ── */
+  document.getElementById('btnAdd').addEventListener('click', async () => {
+    const phone = document.getElementById('fPhone').value.trim();
+    const email = document.getElementById('fEmail').value.trim();
+    if (!phone || !email) { toast('Phone dan email wajib diisi', 'err'); return; }
+
+    const btn = document.getElementById('btnAdd');
+    btn.disabled = true;
+    try {
+      await gql(`
+        mutation($e: String!, $p: String!, $em: String!) {
+          addLeakItem(userEmail: $e, phone: $p, email: $em) { phone email }
+        }`, { e: U_EMAIL, p: phone, em: email });
+      toast(`${email} berhasil ditambahkan`, 'ok');
+      document.getElementById('fPhone').value = '';
+      document.getElementById('fEmail').value = '';
+      await loadData();
+    } catch (e) {
+      toast('Gagal: ' + e.message, 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  /* ── Enter submit form ── */
+  ['fPhone', 'fEmail'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btnAdd').click();
+    })
+  );
+
+  /* ── AI Analyze ── */
+  document.getElementById('btnAnalyze').addEventListener('click', async () => {
+    if (rows.length === 0) { toast('Belum ada data untuk dianalisis', 'err'); return; }
+
+    const btn = document.getElementById('btnAnalyze');
+    btn.disabled = true;
+    btn.textContent = '⟳ Menganalisis...';
+
+    const panel = document.getElementById('aiPanel');
+    const loading = document.getElementById('aiLoading');
+    const result = document.getElementById('aiResult');
+
+    panel.style.display = 'block';
+    loading.style.display = 'block';
+    result.style.display = 'none';
+    panel.scrollIntoView({ behavior: 'smooth' });
+
+    try {
+      const res = await fetch(`${BASE}/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leakItems: rows })
+      });
+      const data = await res.json();
+
+      // Risk badge
+      const riskColors = {
+        KRITIS: 'var(--red)', TINGGI: 'var(--orange)',
+        SEDANG: 'var(--yellow)', RENDAH: 'var(--green)', AMAN: 'var(--green)'
+      };
+      const riskColor = riskColors[data.riskLevel] || 'var(--muted)';
+      document.getElementById('aiRiskBadge').innerHTML =
+        `<span class="badge" style="background:${riskColor}22;color:${riskColor};font-size:12px;padding:4px 12px">
+          ⚡ Risiko: ${data.riskLevel}
+        </span>`;
+
+      document.getElementById('aiSummary').textContent = data.summary;
+
+      const recs = document.getElementById('aiRecs');
+      recs.innerHTML = (data.recommendations || []).map((r, i) =>
+        `<li style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5">
+          <span style="color:var(--blue);font-weight:700;flex-shrink:0">${i + 1}.</span>
+          <span>${r}</span>
+        </li>`
+      ).join('');
+
+      loading.style.display = 'none';
+      result.style.display = 'block';
+      toast('Analisis AI selesai', 'ok');
+    } catch (e) {
+      loading.style.display = 'none';
+      toast('Analisis gagal: ' + e.message, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🤖 Analisis AI';
+    }
+  });
+
+  /* ── Init ── */
+  loadData();
+  connectSSE();
+</script>
+</body>
+</html>

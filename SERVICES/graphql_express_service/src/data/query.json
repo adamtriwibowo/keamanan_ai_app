@@ -1,0 +1,34 @@
+{
+  "dorks": [
+    {
+      "id": 1,
+      "description": "Mencari PDF yang mengandung NIK",
+      "query": "intext:\"Nomor Induk Kependudukan\" filetype:pdf"
+    },
+    {
+      "id": 2,
+      "description": "Mencari file Excel atau CSV yang mengandung Nomor KK atau NIK",
+      "query": "intext:\"Nomor KK\" OR \"NIK\" filetype:xls OR filetype:csv"
+    },
+    {
+      "id": 3,
+      "description": "Mencari dokumen di Google Drive terkait Kartu Keluarga atau NIK",
+      "query": "site:drive.google.com intext:\"kartu keluarga\" OR intext:\"NIK\""
+    },
+    {
+      "id": 4,
+      "description": "Mencari direktori terbuka berisi file KTP, KK, atau NIK",
+      "query": "intitle:\"index of\" \"kartu keluarga\" | \"ktp\" | \"nik\""
+    },
+    {
+      "id": 5,
+      "description": "Mencari file teks yang mengandung data pribadi termasuk NIK",
+      "query": "intext:\"nama lengkap\" \"alamat\" \"NIK\" filetype:txt"
+    },
+    {
+      "id": 6,
+      "description": "Mencari dokumen di Scribd yang berisi KTP/KK/NIK",
+      "query": "site:scribd.com intext:\"KTP\" OR \"KK\" OR \"NIK\""
+    }
+  ]
+}

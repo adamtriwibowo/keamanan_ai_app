@@ -1,0 +1,13 @@
+# Folder hasil kompilasi / cache
+/node_modules
+/dist
+/build
+/tmp
+/logs
+
+.env
+OpenAPI/openapi.js
+
+**/venv/
+/__pycache__/
+/venv/

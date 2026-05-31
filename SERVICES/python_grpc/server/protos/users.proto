@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package users;
+
+// The greeting service definition.
+service Users{
+  // Sends a greeting
+  rpc GetUsers (GetUsersRequest) returns (GetUsersReply) {}
+
+}
+
+message User {
+  int32 id = 1;
+  string name = 2;
+  int32 age = 3 ;
+}
+
+// The request message containing the user's name.
+message GetUsersRequest {
+  int32 id = 1;
+}
+
+// The response message containing the greetings
+message GetUsersReply {
+  repeated User users = 1;
+}
