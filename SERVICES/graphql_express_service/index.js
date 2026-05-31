@@ -46,6 +46,7 @@ const {
 } = require("./src/broadcast/broadcast");
 const { usersSchema } = require("./src/models/mongodb");
 const { analyzeLeaks } = require("./src/service/ai");
+const { scanNIK }     = require("./src/service/nikScan");
 
 const getUserLeak = async (userEmail) => {
   const doc = await usersSchema.findOne({ "users.leakEmailUser": userEmail });
@@ -106,6 +107,19 @@ app.post("/api/analyze", async (req, res) => {
   } catch (err) {
     console.error("AI analyze error:", err.message);
     res.status(500).json({ error: "Gagal menganalisis data" });
+  }
+});
+
+// NIK / KTP Scan endpoint
+app.post("/api/nik-scan", async (req, res) => {
+  try {
+    const { nik } = req.body;
+    if (!nik) return res.status(400).json({ error: "NIK wajib diisi" });
+    const result = await scanNIK(nik);
+    res.json(result);
+  } catch (err) {
+    console.error("NIK scan error:", err.message);
+    res.status(500).json({ error: "Gagal melakukan scan NIK" });
   }
 });
 

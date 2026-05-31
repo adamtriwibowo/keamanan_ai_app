@@ -383,6 +383,78 @@
       .form-row { flex-direction: column; }
       .panel-head { flex-wrap: wrap; }
     }
+
+    /* ── NIK Panel ── */
+    .nik-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .nik-meta-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .nik-meta-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .nik-meta-val {
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .nik-findings {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .nik-finding-item {
+      background: var(--surface2);
+      border: 1px solid rgba(248,81,73,.25);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .nik-finding-host {
+      font-size: 11px;
+      color: var(--red);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .nik-finding-title {
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .nik-finding-snippet {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .nik-finding-link {
+      font-size: 11px;
+      color: var(--blue);
+      word-break: break-all;
+      text-decoration: none;
+    }
+    .nik-finding-link:hover { text-decoration: underline; }
+    .risk-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      font-size: 13px;
+    }
+    .risk-banner.aman   { background: rgba(63,185,80,.08);  border: 1px solid rgba(63,185,80,.25); }
+    .risk-banner.sedang { background: rgba(210,153,34,.08); border: 1px solid rgba(210,153,34,.25); }
+    .risk-banner.tinggi { background: rgba(240,136,62,.08); border: 1px solid rgba(240,136,62,.25); }
+    .risk-banner.kritis { background: rgba(248,81,73,.08);  border: 1px solid rgba(248,81,73,.25); }
+    .risk-icon { font-size: 24px; }
   </style>
 </head>
 <body>
@@ -504,6 +576,48 @@
         <input id="fEmail" type="email" placeholder="user@email.com">
       </div>
       <button class="btn btn-green" id="btnAdd">Tambah</button>
+    </div>
+  </div>
+
+  <!-- NIK / KTP Scan panel -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">🪪 Deteksi Kebocoran NIK / KTP</div>
+      <div class="panel-actions">
+        <span style="font-size:11px;color:var(--muted)">Cek apakah NIK terekspos di internet publik</span>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg">
+        <label>Nomor NIK (16 digit)</label>
+        <input id="fNIK" type="text" placeholder="3273xxxxxxxxxx" maxlength="16" pattern="\d{16}">
+      </div>
+      <button class="btn btn-blue" id="btnNIKScan">🔍 Scan NIK</button>
+    </div>
+  </div>
+
+  <!-- NIK Result panel -->
+  <div class="panel" id="nikPanel" style="display:none">
+    <div class="panel-head">
+      <div class="panel-title">🪪 Hasil Scan NIK</div>
+      <div class="panel-actions">
+        <div id="nikRiskBadge"></div>
+      </div>
+    </div>
+    <div style="padding:18px 20px">
+      <div id="nikLoading" style="display:none;color:var(--muted);font-size:13px">⟳ Memindai NIK di internet...</div>
+      <div id="nikResult" style="display:none">
+        <!-- Risk banner -->
+        <div id="nikBanner" class="risk-banner"></div>
+        <!-- Metadata NIK -->
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Informasi NIK</div>
+        <div class="nik-meta" id="nikMeta"></div>
+        <!-- Temuan kebocoran -->
+        <div id="nikFindingsWrap" style="display:none">
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Temuan Kebocoran</div>
+          <div class="nik-findings" id="nikFindings"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -753,10 +867,12 @@
         SEDANG: 'var(--yellow)', RENDAH: 'var(--green)', AMAN: 'var(--green)'
       };
       const riskColor = riskColors[data.riskLevel] || 'var(--muted)';
+      const srcLabel = data.source === 'ai' ? '🤖 AI' : '📐 Analisis Lokal';
       document.getElementById('aiRiskBadge').innerHTML =
         `<span class="badge" style="background:${riskColor}22;color:${riskColor};font-size:12px;padding:4px 12px">
           ⚡ Risiko: ${data.riskLevel}
-        </span>`;
+        </span>
+        <span style="font-size:11px;color:var(--muted);margin-left:8px">${srcLabel}</span>`;
 
       document.getElementById('aiSummary').textContent = data.summary;
 
@@ -778,6 +894,109 @@
       btn.disabled = false;
       btn.textContent = '🤖 Analisis AI';
     }
+  });
+
+  /* ── NIK Scan ── */
+  document.getElementById('btnNIKScan').addEventListener('click', async () => {
+    const nik = document.getElementById('fNIK').value.trim().replace(/\s|-/g, '');
+    if (!nik) { toast('Masukkan NIK terlebih dahulu', 'err'); return; }
+    if (!/^\d{16}$/.test(nik)) { toast('NIK harus 16 digit angka', 'err'); return; }
+
+    const btn     = document.getElementById('btnNIKScan');
+    const panel   = document.getElementById('nikPanel');
+    const loading = document.getElementById('nikLoading');
+    const result  = document.getElementById('nikResult');
+
+    btn.disabled     = true;
+    btn.textContent  = '⟳ Scanning...';
+    panel.style.display = 'block';
+    loading.style.display = 'block';
+    result.style.display  = 'none';
+    panel.scrollIntoView({ behavior: 'smooth' });
+
+    try {
+      const res  = await fetch(`${BASE}/api/nik-scan`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ nik }),
+      });
+      const data = await res.json();
+
+      if (!data.valid) {
+        loading.style.display = 'none';
+        toast('NIK tidak valid: ' + data.error, 'err');
+        panel.style.display = 'none';
+        return;
+      }
+
+      // Risk badge di header panel
+      const riskColors = {
+        KRITIS: 'var(--red)', TINGGI: 'var(--orange)',
+        SEDANG: 'var(--yellow)', AMAN: 'var(--green)',
+      };
+      const rc = riskColors[data.riskLevel] || 'var(--muted)';
+      document.getElementById('nikRiskBadge').innerHTML =
+        `<span class="badge" style="background:${rc}22;color:${rc};font-size:12px;padding:4px 12px">
+          ⚡ Risiko: ${data.riskLevel}
+        </span>`;
+
+      // Risk banner
+      const bannerClass = { KRITIS:'kritis', TINGGI:'tinggi', SEDANG:'sedang', AMAN:'aman' }[data.riskLevel] || 'aman';
+      const bannerIcon  = { KRITIS:'🚨', TINGGI:'⚠️', SEDANG:'⚠️', AMAN:'✅' }[data.riskLevel];
+      const bannerMsg   = data.isLeaked
+        ? `NIK ini terdeteksi di <strong>${data.leakCount} lokasi</strong> di internet publik. Segera laporkan ke pihak berwenang.`
+        : `NIK ini <strong>tidak ditemukan</strong> dalam hasil pencarian publik. Tetap waspada.`;
+      document.getElementById('nikBanner').className = `risk-banner ${bannerClass}`;
+      document.getElementById('nikBanner').innerHTML =
+        `<span class="risk-icon">${bannerIcon}</span><span>${bannerMsg}</span>`;
+
+      // Metadata NIK
+      const metaFields = [
+        { label: 'NIK',        val: data.nik.replace(/(\d{6})(\d{6})(\d{4})/, '$1-$2-$3') },
+        { label: 'Provinsi',   val: data.province },
+        { label: 'Jenis Kelamin', val: data.gender },
+        { label: 'Tgl Lahir',  val: data.dob },
+        { label: 'No. Urut',   val: data.sequence },
+        { label: 'Scan',       val: new Date(data.scannedAt).toLocaleString('id-ID') },
+      ];
+      document.getElementById('nikMeta').innerHTML = metaFields.map(f =>
+        `<div class="nik-meta-item">
+          <div class="nik-meta-label">${f.label}</div>
+          <div class="nik-meta-val">${f.val}</div>
+        </div>`
+      ).join('');
+
+      // Temuan
+      const findingsWrap = document.getElementById('nikFindingsWrap');
+      if (data.findings && data.findings.length > 0) {
+        findingsWrap.style.display = 'block';
+        document.getElementById('nikFindings').innerHTML = data.findings.map(f =>
+          `<div class="nik-finding-item">
+            <div class="nik-finding-host">⚠ ${f.source}</div>
+            <div class="nik-finding-title">${f.title || '(tanpa judul)'}</div>
+            ${f.snippet ? `<div class="nik-finding-snippet">${f.snippet}</div>` : ''}
+            <a class="nik-finding-link" href="${f.url}" target="_blank" rel="noopener">${f.url}</a>
+          </div>`
+        ).join('');
+      } else {
+        findingsWrap.style.display = 'none';
+      }
+
+      loading.style.display = 'none';
+      result.style.display  = 'block';
+      toast(data.isLeaked ? `NIK terdeteksi bocor di ${data.leakCount} tempat!` : 'NIK aman — tidak ditemukan di internet publik',
+            data.isLeaked ? 'err' : 'ok');
+    } catch (e) {
+      loading.style.display = 'none';
+      toast('Scan NIK gagal: ' + e.message, 'err');
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = '🔍 Scan NIK';
+    }
+  });
+
+  document.getElementById('fNIK').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btnNIKScan').click();
   });
 
   /* ── Init ── */
