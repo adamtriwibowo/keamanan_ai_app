@@ -19,6 +19,22 @@ Aplikasi ini dilengkapi dengan fitur AI Analysis untuk:
 - Klasifikasi tingkat risiko kebocoran
 - Rekomendasi tindakan mitigasi
 - Generate laporan analisis otomatis
+- Support multiple AI model (fallback ke analisis lokal)
+
+## NIK/KTP Scan
+
+Fitur baru untuk mendeteksi kebocoran NIK/KTP di internet publik:
+- Input NIK 16 digit
+- Ekstrak informasi dari kode NIK (provinsi, jenis kelamin, tanggal lahir, no. urut)
+- Pencarian otomatis di internet publik
+- Tampilkan temuan kebocoran dengan link sumber
+- Klasifikasi tingkat risiko (AMAN/SEDANG/TINGGI/KRITIS)
+
+### Endpoint
+```bash
+POST /api/nik-scan
+Body: { "nik": "3273xxxxxxxxxxxxxx" }
+```
 
 ## Tech Stack
 
@@ -43,6 +59,7 @@ Aplikasi ini dilengkapi dengan fitur AI Analysis untuk:
 - morgan - HTTP logging
 - serpapi - Search engine API
 - openai - AI integration (GPT models)
+- openrouter - AI model aggregation (free models)
 
 ### Dev Dependencies
 - playwright - Browser automation
@@ -122,7 +139,9 @@ Buat file `.env` di root directory:
 ```env
 MONGODB_URI=mongodb://localhost:27017/keamanan_ai
 PORT=3000
+PORT_GRAPHQL=5000
 SERPAPI_KEY=your_serpapi_key
+OPENROUTER_API_KEY=your_openrouter_api_key
 ```
 
 ## Struktur Folder
