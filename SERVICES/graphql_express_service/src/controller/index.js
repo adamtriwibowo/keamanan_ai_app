@@ -3,8 +3,6 @@ const serpAPI = require("../service/serpapi");
 const getJson = require("../utils/getJson");
 require("dotenv").config();
 
-
-console.log(process.env.SERPAPI_API_KEY);
 exports.dorkController = async (req,res) => {
   try {
     console.log("dorkController");

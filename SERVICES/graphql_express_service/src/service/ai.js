@@ -1,4 +1,6 @@
 const axios = require("axios");
+const AiUsageLog = require("../models/aiUsageModel");
+const { estimateCostIDR } = require("../config/aiPricing");
 
 // Model gratis yang tersedia di OpenRouter (urutan prioritas)
 const AI_MODELS = [
@@ -60,6 +62,24 @@ const ruleBasedAnalysis = (leakItems) => {
   return { riskLevel, summary, recommendations, source: "rule-based" };
 };
 
+// Catat pemakaian token ke DB untuk dashboard "Pengaturan"
+const logUsage = async (model, promptTokens, completionTokens) => {
+  try {
+    const totalTokens = promptTokens + completionTokens;
+    const estimatedCostIDR = await estimateCostIDR(model, promptTokens, completionTokens);
+    await AiUsageLog.create({
+      model,
+      feature: "leak-analysis",
+      promptTokens,
+      completionTokens,
+      totalTokens,
+      estimatedCostIDR,
+    });
+  } catch (e) {
+    console.warn("[AI Usage] Gagal mencatat pemakaian:", e.message);
+  }
+};
+
 // Coba satu model AI
 const tryModel = async (model, prompt) => {
   const { data } = await axios.post(
@@ -79,6 +99,8 @@ const tryModel = async (model, prompt) => {
       timeout: 20000,
     }
   );
+  const usage = data.usage || {};
+  await logUsage(model, usage.prompt_tokens || 0, usage.completion_tokens || 0);
   return data.choices[0].message?.content || null;
 };
 
