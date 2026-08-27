@@ -14,10 +14,6 @@
     "mongoose": "^8.15.0",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.10",
-    "puppeteer": "^24.8.1",
-    "puppeteer-core": "^24.8.0",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "serpapi": "^2.1.0"
   },
   "devDependencies": {

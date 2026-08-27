@@ -100,14 +100,11 @@ bash deploy/update.sh
 
 ## Catatan
 
-- **`puppeteer` di `package.json`**: paket ini ada di dependencies tapi
-  **tidak dipakai** oleh server yang berjalan (`SERVICES/graphql_express_service`).
-  Fitur scan (NIK/telepon/email) memakai SerpApi, bukan Puppeteer lokal.
-  `npm install` akan tetap mengunduh Chromium (~200MB+) karena paket ini masih
-  terdaftar — kalau mau mempercepat & meringankan instalasi di VPS, saya bisa
-  hapus dependency yang tidak terpakai (`puppeteer`, `puppeteer-core`,
-  `puppeteer-extra`, `puppeteer-extra-plugin-stealth`, `playwright`) dari
-  `package.json`. Tinggal minta.
+- Dependency `puppeteer`, `puppeteer-core`, `puppeteer-extra`, dan
+  `puppeteer-extra-plugin-stealth` sudah dihapus dari `package.json` — tidak
+  dipakai oleh server yang berjalan (fitur scan memakai SerpApi). `npm install`
+  di VPS jadi lebih ringan & cepat (~130 paket lebih sedikit, tidak lagi
+  mengunduh Chromium).
 - Belum pakai domain/nginx sesuai pilihan Anda — akses masih lewat `IP:PORT`.
   Kalau nanti mau tambah domain, tinggal minta setup nginx reverse proxy +
   HTTPS (Let's Encrypt) di atas setup ini, tidak perlu ubah apa pun di sisi
