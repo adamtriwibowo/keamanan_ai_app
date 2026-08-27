@@ -11,3 +11,7 @@ OpenAPI/openapi.js
 **/venv/
 /__pycache__/
 /venv/
+
+# File temporary/lock dari Microsoft Office
+~$*
+*.tmp

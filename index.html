@@ -1,1006 +1,2174 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analisis Kebocoran Data</title>
+  <title>SecureWatch · Analisis Kebocoran Data</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --surface2: #1f2937;
-      --border: #30363d;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --green: #3fb950;
-      --red: #f85149;
-      --yellow: #d29922;
-      --blue: #58a6ff;
-      --orange: #f0883e;
+    /* ── TOKENS ── */
+    :root, [data-theme="dark"] {
+      --bg:       #07091280;
+      --bg-solid: #070912;
+      --surface:  #0D1220;
+      --surface2: #131B2E;
+      --surface3: #1A2540;
+      --border:   #1F2E48;
+      --border2:  #2A3D5E;
+      --text:     #E4ECF8;
+      --text2:    #8EA4C8;
+      --muted:    #4E6488;
+      --accent:   #3D72FF;
+      --accent2:  #6990FF;
+      --danger:   #FF3B4E;
+      --danger2:  #FF6270;
+      --success:  #18C97E;
+      --success2: #35E89A;
+      --warning:  #FFAA00;
+      --warning2: #FFC23D;
+      --orange:   #FF7128;
+      --purple:   #8B5CF6;
+      --sidebar-w: 252px;
+      --topbar-h:  58px;
+      --sh-sm: 0 1px 4px rgba(0,0,0,.5);
+      --sh-md: 0 4px 18px rgba(0,0,0,.55);
+      --sh-lg: 0 8px 36px rgba(0,0,0,.65);
+      --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+    }
+    [data-theme="light"] {
+      --bg:       #ECEEF6;
+      --bg-solid: #ECEEF6;
+      --surface:  #FFFFFF;
+      --surface2: #F3F5FB;
+      --surface3: #E6EAF4;
+      --border:   #D5DCF0;
+      --border2:  #C4CEEA;
+      --text:     #0C1428;
+      --text2:    #3A4F72;
+      --muted:    #7A8FAE;
+      --accent:   #2A5FFF;
+      --accent2:  #4E7AFF;
+      --danger:   #E8202F;
+      --danger2:  #FF3B4E;
+      --success:  #0FAD6A;
+      --success2: #18C97E;
+      --warning:  #D4880A;
+      --warning2: #FFAA00;
+      --orange:   #D95E10;
+      --purple:   #7240E8;
+      --sh-sm: 0 1px 4px rgba(0,0,40,.07);
+      --sh-md: 0 4px 18px rgba(0,0,40,.1);
+      --sh-lg: 0 8px 36px rgba(0,0,40,.14);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
 
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
+      font-family: 'Sora', sans-serif;
+      background: var(--bg-solid);
       color: var(--text);
-      min-height: 100vh;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      overflow: hidden;
+      transition: background .28s, color .28s;
     }
 
-    /* ── Header ── */
-    .header {
+    /* ═══════════ SIDEBAR ═══════════ */
+    .sidebar {
       background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
+      z-index: 50;
+      overflow: hidden;
+    }
+
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 120% 60% at 10% 15%, rgba(61,114,255,.07) 0%, transparent 70%),
+        radial-gradient(ellipse 80% 80% at 90% 85%, rgba(139,92,246,.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .sb-brand {
+      padding: 20px 18px 16px;
       border-bottom: 1px solid var(--border);
-      padding: 14px 28px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      gap: 11px;
+      position: relative;
     }
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
+    .sb-logo {
+      width: 38px; height: 38px;
+      background: linear-gradient(140deg, var(--accent) 0%, var(--purple) 100%);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(61,114,255,.4);
     }
 
-    .logo-icon {
-      width: 34px;
-      height: 34px;
-      background: linear-gradient(135deg, #1a3a5c, #0d2137);
-      border: 1px solid var(--blue);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
+    .sb-brand-name { font-size: 15px; font-weight: 800; letter-spacing: -.4px; line-height: 1.1; }
+    .sb-brand-sub  { font-size: 9.5px; font-weight: 500; color: var(--muted); letter-spacing: .9px; text-transform: uppercase; margin-top: 2px; }
+
+    .sb-nav { flex: 1; padding: 14px 10px; overflow-y: auto; scrollbar-width: none; }
+    .sb-nav::-webkit-scrollbar { display: none; }
+
+    .sb-section {
+      font-size: 9px; font-weight: 700; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--muted);
+      padding: 8px 10px 6px; margin-top: 6px;
     }
 
-    .logo-sub {
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 400;
-      margin-top: 1px;
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 11px;
+      border-radius: var(--r-md);
+      cursor: pointer;
+      font-size: 13px; font-weight: 500;
+      color: var(--text2);
+      transition: all .16s;
+      margin-bottom: 1px;
+      user-select: none;
+      position: relative;
+      border: 1px solid transparent;
+    }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(61,114,255,.14), rgba(139,92,246,.08));
+      color: var(--accent2);
+      border-color: rgba(61,114,255,.22);
+    }
+    .nav-item.active .ni { color: var(--accent); opacity: 1; }
+    .ni { width: 17px; height: 17px; flex-shrink: 0; opacity: .65; transition: opacity .16s; }
+    .nav-item:hover .ni { opacity: 1; }
+
+    .nav-chip {
+      margin-left: auto;
+      background: rgba(255,59,78,.14);
+      color: var(--danger);
+      font-size: 10px; font-weight: 700;
+      padding: 1px 7px; border-radius: 20px;
+      border: 1px solid rgba(255,59,78,.25);
+    }
+
+    .sb-footer {
+      padding: 12px 10px;
+      border-top: 1px solid var(--border);
     }
 
     .sse-pill {
-      display: flex;
-      align-items: center;
-      gap: 7px;
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px;
+      background: var(--surface2);
+      border-radius: var(--r-md);
+      border: 1px solid var(--border);
+    }
+    .sse-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted); flex-shrink: 0; transition: background .3s;
+    }
+    .sse-dot.on  { background: var(--success); box-shadow: 0 0 7px var(--success); animation: blink 2s ease infinite; }
+    .sse-dot.off { background: var(--danger); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
+    .sse-txt { font-size: 11.5px; color: var(--text2); }
+
+    /* ═══════════ MAIN ═══════════ */
+    .main { display: grid; grid-template-rows: var(--topbar-h) 1fr; min-height: 100vh; overflow: hidden; }
+
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 24px; gap: 14px;
+      transition: background .28s, border-color .28s;
+    }
+
+    .tb-title { flex: 1; }
+    .tb-page { font-size: 15px; font-weight: 700; letter-spacing: -.3px; }
+    .tb-sub  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+    .tb-actions { display: flex; align-items: center; gap: 10px; }
+
+    .icon-btn {
+      width: 34px; height: 34px;
+      border-radius: var(--r-sm);
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 5px 12px;
-      font-size: 12px;
-      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all .16s; color: var(--text2);
     }
+    .icon-btn:hover { background: var(--surface3); border-color: var(--border2); color: var(--text); }
 
-    .sse-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--muted);
-      flex-shrink: 0;
+    /* ═══════════ CONTENT ═══════════ */
+    .content {
+      overflow-y: auto; padding: 22px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border2) transparent;
     }
-    .sse-dot.on  { background: var(--green); animation: blink 2s ease-in-out infinite; }
-    .sse-dot.off { background: var(--red); }
+    .content::-webkit-scrollbar { width: 4px; }
+    .content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
 
-    @keyframes blink {
-      0%,100% { opacity: 1; }
-      50%      { opacity: 0.3; }
-    }
+    .page { display: none; }
+    .page.active { display: block; animation: fin .22s ease; }
+    @keyframes fin { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
 
-    /* ── Layout ── */
-    .wrap {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 28px 28px 60px;
-    }
-
-    /* ── Stats ── */
-    .stats {
+    /* ═══════════ STAT CARDS ═══════════ */
+    .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-      margin-bottom: 24px;
+      gap: 13px; margin-bottom: 20px;
     }
 
     .stat {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px 20px;
-      position: relative;
-      overflow: hidden;
+      border-radius: var(--r-lg);
+      padding: 17px 19px;
+      position: relative; overflow: hidden;
+      transition: border-color .18s, transform .18s, box-shadow .18s;
+      cursor: default;
     }
-
-    .stat::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
+    .stat::after {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 2px; border-radius: 2px 2px 0 0;
     }
-    .stat.s-total::before  { background: var(--blue); }
-    .stat.s-bocor::before  { background: var(--red); }
-    .stat.s-aman::before   { background: var(--green); }
-    .stat.s-pending::before { background: var(--yellow); }
+    .stat:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--sh-md); }
 
-    .stat-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      color: var(--muted);
-      margin-bottom: 10px;
-    }
+    .stat.s-blue::after   { background: linear-gradient(90deg, var(--accent), var(--purple)); }
+    .stat.s-red::after    { background: linear-gradient(90deg, var(--danger), var(--orange)); }
+    .stat.s-green::after  { background: linear-gradient(90deg, var(--success), #06d6a0); }
+    .stat.s-yellow::after { background: linear-gradient(90deg, var(--warning), var(--orange)); }
 
-    .stat-val {
-      font-size: 36px;
-      font-weight: 700;
-      line-height: 1;
-    }
+    .stat-lbl { font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .stat-val { font-size: 36px; font-weight: 800; line-height: 1; letter-spacing: -1.5px; }
+    .s-blue   .stat-val { color: var(--accent); }
+    .s-red    .stat-val { color: var(--danger); }
+    .s-green  .stat-val { color: var(--success); }
+    .s-yellow .stat-val { color: var(--warning); }
+    .stat-ico { position: absolute; right: 14px; bottom: 12px; opacity: .06; }
 
-    .stat.s-total  .stat-val { color: var(--blue); }
-    .stat.s-bocor  .stat-val { color: var(--red); }
-    .stat.s-aman   .stat-val { color: var(--green); }
-    .stat.s-pending .stat-val { color: var(--yellow); }
-
-    .stat-icon {
-      position: absolute;
-      right: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 28px;
-      opacity: 0.12;
-    }
-
-    /* ── Panel ── */
-    .panel {
+    /* ═══════════ CARD ═══════════ */
+    .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--r-lg);
       overflow: hidden;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
+      transition: background .28s, border-color .28s;
     }
 
-    .panel-head {
-      display: flex;
-      align-items: center;
+    .card-head {
+      display: flex; align-items: center;
       justify-content: space-between;
-      padding: 14px 18px;
+      padding: 13px 18px;
       border-bottom: 1px solid var(--border);
-      background: var(--surface2);
-      gap: 10px;
+      background: rgba(0,0,0,.05);
+      gap: 10px; flex-wrap: wrap;
     }
+    [data-theme="light"] .card-head { background: rgba(0,0,0,.02); }
 
-    .panel-title {
-      font-size: 13px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .card-title {
+      font-size: 12.5px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+      letter-spacing: -.1px;
     }
+    .card-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-    .panel-actions { display: flex; gap: 8px; align-items: center; }
-
-    /* ── Buttons ── */
+    /* ═══════════ BUTTONS ═══════════ */
     .btn {
+      display: inline-flex; align-items: center; gap: 6px;
       padding: 7px 14px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      transition: filter 0.15s, opacity 0.15s;
-      white-space: nowrap;
+      border-radius: var(--r-sm);
+      border: none; cursor: pointer;
+      font-family: 'Sora', sans-serif;
+      font-size: 12px; font-weight: 600;
+      white-space: nowrap; letter-spacing: .1px;
+      transition: all .16s;
     }
-    .btn:hover:not(:disabled) { filter: brightness(1.15); }
-    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn:disabled { opacity: .42; cursor: not-allowed; }
+    .btn:not(:disabled):hover { filter: brightness(1.12); transform: translateY(-1px); box-shadow: var(--sh-sm); }
+    .btn:not(:disabled):active { transform: translateY(0); }
 
-    .btn-green  { background: var(--green);  color: #000; }
-    .btn-red    { background: var(--red);    color: #fff; }
-    .btn-blue   { background: var(--blue);   color: #000; }
-    .btn-ghost  { background: transparent;   color: var(--muted); border: 1px solid var(--border); }
-    .btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--muted); filter: none; }
+    .btn-primary { background: var(--accent);   color: #fff; }
+    .btn-success { background: var(--success);  color: #fff; }
+    .btn-danger  { background: var(--danger);   color: #fff; }
+    .btn-ghost   { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:not(:disabled):hover { background: var(--surface2); border-color: var(--border2); color: var(--text); filter: none; transform: none; box-shadow: none; }
 
-    /* ── Table ── */
+    /* ═══════════ TABLE ═══════════ */
     .tbl-wrap { overflow-x: auto; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    thead { background: rgba(255,255,255,0.02); }
-
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th {
-      padding: 9px 14px;
-      text-align: left;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
+      padding: 9px 14px; text-align: left;
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .7px; white-space: nowrap;
+      background: rgba(0,0,0,.04); border-bottom: 1px solid var(--border);
     }
+    [data-theme="light"] th { background: rgba(0,0,0,.02); }
+    td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; transition: background .12s; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+    .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
 
-    td {
-      padding: 11px 14px;
-      border-top: 1px solid var(--border);
-      vertical-align: middle;
-    }
-
-    tr:hover td { background: rgba(255,255,255,0.025); }
-
-    .mono { font-family: 'Consolas', monospace; }
-
-    /* ── Badges ── */
+    /* ═══════════ BADGES ═══════════ */
     .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 9px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 9px; border-radius: 20px;
+      font-size: 10.5px; font-weight: 700; white-space: nowrap;
     }
+    .b-wait  { background: rgba(255,170,0,.1);  color: var(--warning);  border: 1px solid rgba(255,170,0,.25); }
+    .b-scan  { background: rgba(61,114,255,.1); color: var(--accent2);  border: 1px solid rgba(61,114,255,.25); }
+    .b-done  { background: rgba(24,201,126,.1); color: var(--success);  border: 1px solid rgba(24,201,126,.25); }
+    .b-bocor { background: rgba(255,59,78,.1);  color: var(--danger);   border: 1px solid rgba(255,59,78,.25); }
+    .b-aman  { background: rgba(24,201,126,.1); color: var(--success);  border: 1px solid rgba(24,201,126,.25); }
 
-    .b-wait    { background: rgba(210,153,34,.15); color: var(--yellow); }
-    .b-scan    { background: rgba(88,166,255,.15);  color: var(--blue); }
-    .b-done    { background: rgba(63,185,80,.15);   color: var(--green); }
-    .b-bocor   { background: rgba(248,81,73,.15);   color: var(--red); }
-    .b-aman    { background: rgba(63,185,80,.15);   color: var(--green); }
-
-    /* ── Leak tags ── */
     .tags { display: flex; flex-wrap: wrap; gap: 4px; }
-
     .tag {
-      background: rgba(248,81,73,.08);
-      border: 1px solid rgba(248,81,73,.25);
-      color: var(--red);
-      border-radius: 4px;
-      padding: 1px 6px;
-      font-size: 10px;
+      background: rgba(255,59,78,.07);
+      border: 1px solid rgba(255,59,78,.2);
+      color: var(--danger2); border-radius: 4px;
+      padding: 1px 7px; font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
     }
 
-    /* ── Checkbox ── */
-    input[type=checkbox] {
-      width: 14px;
-      height: 14px;
-      accent-color: var(--blue);
-      cursor: pointer;
+    /* ═══════════ FORMS ═══════════ */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 12px; align-items: end; padding: 16px 18px;
     }
-
-    /* ── Empty ── */
-    .empty {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--muted);
-    }
-    .empty .ei { font-size: 38px; margin-bottom: 12px; }
-    .empty p   { font-size: 13px; }
-
-    /* ── Form ── */
-    .form-row {
-      display: flex;
-      gap: 12px;
-      align-items: flex-end;
-      padding: 16px 18px;
-    }
-
-    .fg { flex: 1; }
-
-    .fg label {
-      display: block;
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 5px;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-
+    .fg { display: flex; flex-direction: column; gap: 5px; }
+    .fg label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
     .fg input {
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 7px 11px;
-      color: var(--text);
-      font-size: 13px;
-      outline: none;
-      transition: border-color 0.15s;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--r-sm); padding: 9px 12px;
+      color: var(--text); font-family: 'Sora', sans-serif; font-size: 13px;
+      outline: none; transition: border-color .16s, box-shadow .16s; width: 100%;
     }
-
-    .fg input:focus { border-color: var(--blue); }
+    .fg input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(61,114,255,.14); }
     .fg input::placeholder { color: var(--muted); }
 
-    /* ── Toast ── */
-    .toast-wrap {
-      position: fixed;
-      bottom: 22px;
-      right: 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 999;
-    }
+    input[type=checkbox] { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; }
 
-    .toast {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 11px 15px;
-      font-size: 13px;
-      min-width: 250px;
-      max-width: 340px;
-      animation: tin .2s ease;
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-    }
-
-    .toast.ok  { border-left: 3px solid var(--green); }
-    .toast.err { border-left: 3px solid var(--red); }
-    .toast.inf { border-left: 3px solid var(--blue); }
-
-    @keyframes tin {
-      from { transform: translateX(110%); opacity: 0; }
-      to   { transform: translateX(0);   opacity: 1; }
-    }
-
-    /* ── Last updated ── */
-    .last-upd {
-      font-size: 11px;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    /* ── Select info ── */
-    .sel-info {
-      font-size: 12px;
-      color: var(--muted);
-      display: none;
-      align-items: center;
-      gap: 6px;
-    }
+    .sel-info { font-size: 12px; color: var(--muted); display: none; align-items: center; gap: 5px; }
     .sel-info.show { display: flex; }
-    .sel-count { color: var(--blue); font-weight: 600; }
+    .sel-count { color: var(--accent2); font-weight: 700; }
 
-    @media (max-width: 768px) {
-      .stats { grid-template-columns: repeat(2, 1fr); }
-      .form-row { flex-direction: column; }
-      .panel-head { flex-wrap: wrap; }
-    }
+    /* ═══════════ EMPTY ═══════════ */
+    .empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+    .ei    { font-size: 38px; margin-bottom: 10px; opacity: .5; }
+    .empty p { font-size: 13px; }
 
-    /* ── NIK Panel ── */
-    .nik-meta {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
+    /* ═══════════ LOADING ═══════════ */
+    .loading-row { display: flex; align-items: center; gap: 10px; padding: 18px 20px; font-size: 13px; color: var(--muted); }
+    .spin {
+      width: 15px; height: 15px; border-radius: 50%;
+      border: 2px solid var(--border2); border-top-color: var(--accent);
+      animation: sp .7s linear infinite; flex-shrink: 0;
     }
-    .nik-meta-item {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-    }
-    .nik-meta-label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--muted);
-      margin-bottom: 5px;
-    }
-    .nik-meta-val {
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .nik-findings {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .nik-finding-item {
-      background: var(--surface2);
-      border: 1px solid rgba(248,81,73,.25);
-      border-radius: 8px;
-      padding: 12px 14px;
-    }
-    .nik-finding-host {
-      font-size: 11px;
-      color: var(--red);
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-    .nik-finding-title {
-      font-size: 13px;
-      margin-bottom: 4px;
-    }
-    .nik-finding-snippet {
-      font-size: 11px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-    .nik-finding-link {
-      font-size: 11px;
-      color: var(--blue);
-      word-break: break-all;
-      text-decoration: none;
-    }
-    .nik-finding-link:hover { text-decoration: underline; }
+    @keyframes sp { to { transform: rotate(360deg); } }
+
+    /* ═══════════ AI PANEL ═══════════ */
     .risk-banner {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 18px;
-      border-radius: 8px;
-      margin-bottom: 18px;
-      font-size: 13px;
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 16px; border-radius: var(--r-md);
+      margin-bottom: 16px; border: 1px solid;
     }
-    .risk-banner.aman   { background: rgba(63,185,80,.08);  border: 1px solid rgba(63,185,80,.25); }
-    .risk-banner.sedang { background: rgba(210,153,34,.08); border: 1px solid rgba(210,153,34,.25); }
-    .risk-banner.tinggi { background: rgba(240,136,62,.08); border: 1px solid rgba(240,136,62,.25); }
-    .risk-banner.kritis { background: rgba(248,81,73,.08);  border: 1px solid rgba(248,81,73,.25); }
-    .risk-icon { font-size: 24px; }
+    .risk-banner.aman   { background: rgba(24,201,126,.06);  border-color: rgba(24,201,126,.2); }
+    .risk-banner.sedang { background: rgba(255,170,0,.06);   border-color: rgba(255,170,0,.2); }
+    .risk-banner.tinggi { background: rgba(255,113,40,.06);  border-color: rgba(255,113,40,.2); }
+    .risk-banner.kritis { background: rgba(255,59,78,.06);   border-color: rgba(255,59,78,.2); }
+
+    .risk-pill {
+      font-size: 12px; font-weight: 800; letter-spacing: .5px;
+      padding: 5px 14px; border-radius: 20px; flex-shrink: 0;
+    }
+
+    .ai-summary { font-size: 13px; line-height: 1.75; color: var(--text2); margin: 0; flex: 1; }
+
+    .recs-label { font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--muted); margin-bottom: 9px; }
+    .rec {
+      display: flex; gap: 11px; align-items: flex-start;
+      padding: 10px 14px; background: var(--surface2);
+      border-radius: var(--r-sm); margin-bottom: 7px;
+      font-size: 13px; line-height: 1.55; border: 1px solid var(--border);
+    }
+    .rec-n {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; margin-top: 1px;
+    }
+
+    /* ═══════════ NIK PANEL ═══════════ */
+    .nik-meta-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+      gap: 10px; margin-bottom: 18px;
+    }
+    .nik-cell {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--r-md); padding: 12px 14px;
+    }
+    .nik-cell-lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 5px; }
+    .nik-cell-val { font-size: 13.5px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
+    .finding-card {
+      background: var(--surface2);
+      border: 1px solid rgba(255,59,78,.2);
+      border-left: 3px solid var(--danger);
+      border-radius: var(--r-md);
+      padding: 12px 15px; margin-bottom: 9px;
+    }
+    .finding-host    { font-size: 10.5px; color: var(--danger2); font-weight: 700; margin-bottom: 3px; }
+    .finding-title   { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+    .finding-snippet { font-size: 11.5px; color: var(--text2); line-height: 1.55; margin-bottom: 5px; }
+    .finding-url     { font-size: 10.5px; color: var(--accent2); word-break: break-all; text-decoration: none; font-family: 'JetBrains Mono', monospace; }
+    .finding-url:hover { text-decoration: underline; }
+
+    /* ═══════════ NIK SOURCE BREAKDOWN ═══════════ */
+    .src-breakdown { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 10px; margin-bottom: 18px; }
+    .src-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--r-md); padding: 13px 15px;
+      position: relative; overflow: hidden;
+      transition: transform .16s, box-shadow .16s;
+    }
+    .src-card:hover { transform: translateY(-2px); box-shadow: var(--sh-md); }
+    .src-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2.5px; border-radius: 2px 2px 0 0; }
+    .src-card.c-kritis::before { background: linear-gradient(90deg, var(--danger), var(--orange)); }
+    .src-card.c-tinggi::before { background: linear-gradient(90deg, var(--orange), var(--warning)); }
+    .src-card.c-sedang::before { background: linear-gradient(90deg, var(--warning), var(--accent)); }
+    .src-card-domain { font-size: 10.5px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--text2); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .src-card-count { font-size: 28px; font-weight: 800; line-height: 1; letter-spacing: -1.2px; margin-bottom: 7px; }
+    .src-card.c-kritis .src-card-count { color: var(--danger); }
+    .src-card.c-tinggi .src-card-count { color: var(--orange); }
+    .src-card.c-sedang .src-card-count { color: var(--warning); }
+    .src-card-desc { font-size: 10px; color: var(--muted); margin-top: 5px; }
+    .confidence-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 20px;
+      font-size: 9.5px; font-weight: 700; letter-spacing: .4px; white-space: nowrap;
+    }
+    .cf-kritis { background: rgba(255,59,78,.1);  color: var(--danger);  border: 1px solid rgba(255,59,78,.25); }
+    .cf-tinggi { background: rgba(255,113,40,.1); color: var(--orange);  border: 1px solid rgba(255,113,40,.25); }
+    .cf-sedang { background: rgba(255,170,0,.1);  color: var(--warning); border: 1px solid rgba(255,170,0,.25); }
+    .dork-tag {
+      display: inline-block;
+      background: rgba(61,114,255,.08); border: 1px solid rgba(61,114,255,.2);
+      color: var(--accent2); border-radius: 4px;
+      padding: 1px 7px; font-size: 10px; font-family: 'JetBrains Mono', monospace;
+      max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      vertical-align: middle;
+    }
+    .src-section-lbl {
+      font-size: 9.5px; font-weight: 700; letter-spacing: .8px;
+      text-transform: uppercase; color: var(--muted); margin: 14px 0 10px;
+    }
+    .src-section-lbl:first-child { margin-top: 0; }
+
+    /* ═══════════ LAPORAN ═══════════ */
+    .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+    /* Laporan header */
+    .lap-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 14px;
+    }
+    .lap-header-left { display: flex; flex-direction: column; gap: 4px; }
+    .lap-title { font-size: 20px; font-weight: 800; letter-spacing: -.5px; }
+    .lap-subtitle { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+    /* KPI strip */
+    .kpi-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+    .kpi {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-md); padding: 14px 16px;
+      position: relative; overflow: hidden;
+      transition: transform .18s, box-shadow .18s;
+    }
+    .kpi:hover { transform: translateY(-2px); box-shadow: var(--sh-md); }
+    .kpi::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 2px; border-radius: 0 0 2px 2px;
+    }
+    .kpi.k-blue::after   { background: var(--accent); }
+    .kpi.k-red::after    { background: var(--danger); }
+    .kpi.k-green::after  { background: var(--success); }
+    .kpi.k-orange::after { background: var(--orange); }
+    .kpi.k-purple::after { background: var(--purple); }
+    .kpi-lbl { font-size: 9.5px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .kpi-val { font-size: 28px; font-weight: 800; letter-spacing: -1.2px; line-height: 1; }
+    .kpi.k-blue   .kpi-val { color: var(--accent); }
+    .kpi.k-red    .kpi-val { color: var(--danger); }
+    .kpi.k-green  .kpi-val { color: var(--success); }
+    .kpi.k-orange .kpi-val { color: var(--orange); }
+    .kpi.k-purple .kpi-val { color: var(--purple); }
+    .kpi-sub { font-size: 10px; color: var(--muted); margin-top: 5px; }
+
+    /* Tri-chart row */
+    .tri-grid { display: grid; grid-template-columns: 200px 1fr 1fr; gap: 13px; margin-bottom: 14px; }
+
+    /* Ring chart */
+    .ring-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 16px; gap: 16px; }
+    .ring { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
+    .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .ring-pct { font-size: 18px; font-weight: 800; letter-spacing: -.5px; }
+    .ring-lbl { font-size: 9px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+    .ring-legend { width: 100%; }
+    .rl-item { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; font-size: 11px; }
+    .rl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .rl-name { color: var(--text2); flex: 1; }
+    .rl-n { font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+    /* Type breakdown */
+    .type-bars { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+    .tb-item { display: flex; flex-direction: column; gap: 5px; }
+    .tb-top { display: flex; align-items: center; justify-content: space-between; }
+    .tb-name { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+    .tb-count { font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+    .tb-track { height: 6px; background: var(--surface3); border-radius: 4px; overflow: hidden; }
+    .tb-fill { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(.16,1,.3,1); }
+
+    /* Activity sparkline */
+    .sparkline-wrap { padding: 16px 20px; }
+    .sparkline-title { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 14px; }
+    .spark-bars { display: flex; align-items: flex-end; gap: 4px; height: 70px; }
+    .spark-bar {
+      flex: 1; border-radius: 3px 3px 0 0;
+      background: var(--accent); opacity: .6;
+      transition: opacity .16s, height .8s cubic-bezier(.16,1,.3,1);
+      min-height: 3px; cursor: default;
+    }
+    .spark-bar:hover { opacity: 1; }
+    .spark-bar.has-leak { background: var(--danger); opacity: .75; }
+    .spark-labels { display: flex; gap: 4px; margin-top: 5px; }
+    .spark-lbl { flex: 1; font-size: 9px; color: var(--muted); text-align: center; font-family: 'JetBrains Mono', monospace; }
+
+    /* Full-width bar chart */
+    .src-bar-item {
+      display: grid; grid-template-columns: 130px 1fr 48px;
+      align-items: center; gap: 12px; margin-bottom: 12px;
+    }
+    .src-bar-lbl { font-size: 11.5px; color: var(--text2); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .src-bar-track { height: 8px; background: var(--surface3); border-radius: 4px; overflow: hidden; }
+    .src-bar-fill  { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(.16,1,.3,1); }
+    .src-bar-val   { font-size: 11.5px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+    /* Breach source tags */
+    .breach-cloud { display: flex; flex-wrap: wrap; gap: 7px; padding: 16px 20px; }
+    .btag {
+      padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600;
+      border: 1px solid; cursor: default; transition: transform .14s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .btag:hover { transform: scale(1.06); }
+
+    /* Recent findings table */
+    .rft { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .rft th { padding: 9px 14px; text-align: left; font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .7px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,.04); }
+    .rft td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .rft tr:last-child td { border-bottom: none; }
+    .rft tr:hover td { background: var(--surface2); }
+
+    /* Insight cards */
+    .insight-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px 20px; }
+    .ic {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--r-md); padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: transform .16s, box-shadow .16s;
+    }
+    .ic:hover { transform: translateY(-2px); box-shadow: var(--sh-md); }
+    .ic-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .ic-title { font-size: 12.5px; font-weight: 700; letter-spacing: -.1px; }
+    .ic-desc  { font-size: 11.5px; color: var(--text2); line-height: 1.65; }
+    .ic-badge { align-self: flex-start; padding: 2px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+
+    /* PDF button glow */
+    .btn-pdf {
+      background: linear-gradient(135deg, #FF3B4E, #FF7128);
+      color: #fff; box-shadow: 0 4px 18px rgba(255,59,78,.35);
+    }
+    .btn-pdf:not(:disabled):hover { filter: brightness(1.1); box-shadow: 0 6px 24px rgba(255,59,78,.5); }
+
+    /* ═══════════ PRINT STYLES ═══════════ */
+    @media print {
+      @page { size: A4; margin: 18mm 16mm; }
+      body { background: #fff !important; color: #0C1428 !important; display: block !important; overflow: auto !important; height: auto !important; }
+      .sidebar, .topbar, .toast-wrap, #page-dashboard, #page-monitor, #page-nik, #page-phone, #page-email, .lap-header .btn-pdf, .btn-ghost { display: none !important; }
+      .main { display: block !important; overflow: visible !important; }
+      .content { overflow: visible !important; padding: 0 !important; }
+      #page-laporan { display: block !important; }
+      .card { border: 1px solid #d0d7e8 !important; background: #fff !important; box-shadow: none !important; break-inside: avoid; margin-bottom: 14px; }
+      .kpi { background: #f5f7ff !important; border: 1px solid #d0d7e8 !important; }
+      .kpi-val, .tb-count, .rl-n, .src-bar-val { color: #0C1428 !important; }
+      .kpi-lbl, .sparkline-title, .rl-name, .src-bar-lbl, .ic-desc { color: #3A4F72 !important; }
+      .kpi.k-blue   .kpi-val { color: #2A5FFF !important; }
+      .kpi.k-red    .kpi-val { color: #E8202F !important; }
+      .kpi.k-green  .kpi-val { color: #0FAD6A !important; }
+      .kpi.k-orange .kpi-val { color: #D95E10 !important; }
+      .kpi.k-purple .kpi-val { color: #7240E8 !important; }
+      .print-header { display: flex !important; }
+      .tb-track, .src-bar-track { background: #e8ecf6 !important; }
+      .ic { background: #f5f7ff !important; border: 1px solid #d0d7e8 !important; }
+      .rft th { background: #f0f3ff !important; }
+      .spark-bars { height: 55px; }
+    }
+    .print-header {
+      display: none;
+      align-items: center; justify-content: space-between;
+      margin-bottom: 20px; padding-bottom: 14px;
+      border-bottom: 2px solid #2A5FFF;
+    }
+    .print-header-brand { display: flex; align-items: center; gap: 10px; }
+    .print-header-logo { width: 36px; height: 36px; background: linear-gradient(140deg,#2A5FFF,#7240E8); border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+    .print-header-name { font-size: 16px; font-weight: 800; color: #0C1428; }
+    .print-header-meta { font-size: 11px; color: #3A4F72; text-align: right; }
+
+    .chart-bar-item {
+      display: grid; grid-template-columns: 110px 1fr 44px;
+      align-items: center; gap: 10px; margin-bottom: 11px;
+    }
+    .chart-bar-lbl   { font-size: 11.5px; color: var(--text2); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chart-bar-track { height: 7px; background: var(--surface3); border-radius: 4px; overflow: hidden; }
+    .chart-bar-fill  { height: 100%; border-radius: 4px; transition: width .8s cubic-bezier(.16,1,.3,1); }
+    .chart-bar-val   { font-size: 11.5px; font-weight: 700; font-family: 'JetBrains Mono', monospace; text-align: right; }
+
+    .donut-leg { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 9px; }
+    .donut-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .donut-lbl { color: var(--text2); flex: 1; }
+    .donut-val { font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+    .insight-row {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+    }
+    .insight-row:last-child { border-bottom: none; }
+    .insight-ico-wrap {
+      width: 36px; height: 36px; border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .insight-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+    .insight-desc  { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+    /* ═══════════ TOAST ═══════════ */
+    .toast-wrap { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; }
+    .toast {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-md); padding: 11px 15px;
+      font-size: 13px; min-width: 255px; max-width: 350px;
+      animation: tin .22s cubic-bezier(.16,1,.3,1);
+      display: flex; align-items: flex-start; gap: 10px;
+      box-shadow: var(--sh-lg);
+    }
+    .toast.ok  { border-left: 3px solid var(--success); }
+    .toast.err { border-left: 3px solid var(--danger); }
+    .toast.inf { border-left: 3px solid var(--accent); }
+    @keyframes tin { from{transform:translateX(110%);opacity:0} to{transform:translateX(0);opacity:1} }
+
+    /* ═══════════ RESPONSIVE ═══════════ */
+    @media (max-width: 900px) {
+      :root { --sidebar-w: 200px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .analytics-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 660px) {
+      body { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-  <div class="logo">
-    <div class="logo-icon">🔒</div>
+<!-- ═══════════════════════ SIDEBAR ═══════════════════════ -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z" fill="rgba(255,255,255,.92)"/>
+        <path d="M9 12l2 2 4-4" stroke="#0D1220" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
     <div>
-      <div>Analisis Kebocoran Data</div>
-      <div class="logo-sub">OSINT Data Leak Monitoring</div>
-    </div>
-  </div>
-  <div class="sse-pill">
-    <div class="sse-dot" id="sseDot"></div>
-    <span id="sseLabel">Menghubungkan...</span>
-  </div>
-</div>
-
-<div class="wrap">
-
-  <!-- Stats -->
-  <div class="stats">
-    <div class="stat s-total">
-      <div class="stat-label">Total Dipantau</div>
-      <div class="stat-val" id="sTotal">–</div>
-      <div class="stat-icon">📋</div>
-    </div>
-    <div class="stat s-bocor">
-      <div class="stat-label">Terdeteksi Bocor</div>
-      <div class="stat-val" id="sBocor">–</div>
-      <div class="stat-icon">⚠️</div>
-    </div>
-    <div class="stat s-aman">
-      <div class="stat-label">Aman</div>
-      <div class="stat-val" id="sAman">–</div>
-      <div class="stat-icon">✅</div>
-    </div>
-    <div class="stat s-pending">
-      <div class="stat-label">Belum Dicek</div>
-      <div class="stat-val" id="sPending">–</div>
-      <div class="stat-icon">⏳</div>
+      <div class="sb-brand-name">SecureWatch</div>
+      <div class="sb-brand-sub">Data Leak Intel</div>
     </div>
   </div>
 
-  <!-- Table panel -->
-  <div class="panel">
-    <div class="panel-head">
-      <div class="panel-title">
-        📊 Data Monitoring
-        <span class="last-upd" id="lastUpd"></span>
-      </div>
-      <div class="panel-actions">
-        <div class="sel-info" id="selInfo">
-          <span class="sel-count" id="selCount">0</span> dipilih
+  <nav class="sb-nav">
+    <div class="sb-section">Utama</div>
+
+    <div class="nav-item active" data-page="dashboard">
+      <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+      Dashboard
+    </div>
+
+    <div class="nav-item" data-page="monitor">
+      <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      Data Monitor
+      <span class="nav-chip" id="navChip" style="display:none">0</span>
+    </div>
+
+    <div class="nav-item" data-page="nik">
+      <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="5" width="20" height="14" rx="2"/>
+        <circle cx="8" cy="11" r="2"/>
+        <path d="M14 9h4M14 13h2M5 17c.5-1.5 1.5-2.5 3-2.5s2.5 1 3 2.5"/>
+      </svg>
+      Deteksi NIK / KTP
+    </div>
+
+    <div class="nav-item" data-page="phone">
+      <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
+      </svg>
+      Deteksi No. Telepon
+    </div>
+
+    <div class="nav-item" data-page="email">
+      <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+        <polyline points="22,6 12,13 2,6"/>
+      </svg>
+      Deteksi Email Bocor
+    </div>
+
+    <div class="sb-section" style="margin-top:8px">Analitik</div>
+
+    <div class="nav-item" data-page="laporan">
+      <svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 20V10M12 20V4M6 20v-6"/>
+      </svg>
+      Laporan & Insight
+    </div>
+  </nav>
+
+  <div class="sb-footer">
+    <div class="sse-pill">
+      <div class="sse-dot" id="sseDot"></div>
+      <span class="sse-txt" id="sseLabel">Menghubungkan…</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════════════ MAIN ═══════════════════════ -->
+<div class="main">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="tb-title">
+      <div class="tb-page" id="tbPage">Dashboard</div>
+      <div class="tb-sub"  id="tbSub">Ringkasan pemantauan kebocoran data</div>
+    </div>
+    <div class="tb-actions">
+      <div id="userPill" style="display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px 5px 8px;font-size:12px;">
+        <div style="width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;">
-          <input type="checkbox" id="selAll"> Pilih Semua
-        </label>
-        <button class="btn btn-blue" id="btnScan">🔍 Scan Dipilih</button>
-        <button class="btn btn-ghost" id="btnAnalyze">🤖 Analisis AI</button>
-        <button class="btn btn-ghost" id="btnRefresh">↻ Refresh</button>
+        <span id="userNameLabel" style="font-weight:600;color:var(--text)">—</span>
       </div>
+      <button class="icon-btn" id="themeBtn" title="Ganti tema">
+        <svg id="iMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        <svg id="iSun"  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+      <button class="icon-btn" id="btnLogout" title="Keluar" style="color:var(--danger2)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
     </div>
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:36px"></th>
-            <th>No Telepon</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Kebocoran</th>
-            <th>Sumber Bocor</th>
-          </tr>
-        </thead>
-        <tbody id="tbody">
-          <tr><td colspan="6">
-            <div class="empty">
-              <div class="ei">📡</div>
-              <p>Menunggu data dari server...</p>
+  </header>
+
+  <main class="content">
+
+    <!-- ════════ DASHBOARD ════════ -->
+    <div class="page active" id="page-dashboard">
+
+      <div class="stats-grid">
+        <div class="stat s-blue">
+          <div class="stat-lbl">Total Scan</div>
+          <div class="stat-val" id="sTotal">—</div>
+          <div class="stat-ico"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+        </div>
+        <div class="stat s-red">
+          <div class="stat-lbl">Terdeteksi Bocor</div>
+          <div class="stat-val" id="sBocor">—</div>
+          <div class="stat-ico"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        </div>
+        <div class="stat s-green">
+          <div class="stat-lbl">Status Aman</div>
+          <div class="stat-val" id="sAman">—</div>
+          <div class="stat-ico"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        </div>
+        <div class="stat s-yellow">
+          <div class="stat-lbl">Risiko Sedang</div>
+          <div class="stat-val" id="sPending">—</div>
+          <div class="stat-ico"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        </div>
+      </div>
+
+      <!-- AI card -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10"/><path d="M22 2L12 12M22 2h-6M22 2v6"/></svg>
+            Analisis Risiko AI
+          </div>
+          <div class="card-actions">
+            <span id="aiSrcLbl" style="font-size:11px;color:var(--muted)"></span>
+            <button class="btn btn-ghost" id="btnAnalyze">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10"/><path d="M22 2L12 12M22 2h-6M22 2v6"/></svg>
+              Analisis AI
+            </button>
+          </div>
+        </div>
+        <div id="aiLoad"  class="loading-row" style="display:none"><div class="spin"></div>Menganalisis data dengan AI…</div>
+        <div id="aiEmpty" style="padding:22px 20px;font-size:13px;color:var(--muted)">Klik <strong style="color:var(--text2)">Analisis AI</strong> untuk mendapatkan penilaian risiko berbasis kecerdasan buatan.</div>
+        <div id="aiRes"   style="display:none;padding:18px 20px">
+          <div id="aiHeader" class="risk-banner">
+            <div id="aiPill" class="risk-pill"></div>
+            <div id="aiSum"  class="ai-summary"></div>
+          </div>
+          <div class="recs-label">Rekomendasi Tindakan</div>
+          <div id="aiRecs"></div>
+        </div>
+      </div>
+
+    </div><!-- /dashboard -->
+
+    <!-- ════════ DATA MONITOR ════════ -->
+    <div class="page" id="page-monitor">
+
+      <!-- Filter tabs -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn btn-primary hist-filter active" data-type="">Semua</button>
+        <button class="btn btn-ghost hist-filter" data-type="NIK">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M14 9h4M14 13h2"/></svg>
+          NIK / KTP
+        </button>
+        <button class="btn btn-ghost hist-filter" data-type="PHONE">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          No. Telepon
+        </button>
+        <button class="btn btn-ghost hist-filter" data-type="EMAIL">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Email
+        </button>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-ghost" id="btnRefreshHist">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Riwayat Pemindaian
+          </div>
+          <span id="histCount" style="font-size:11px;color:var(--muted)">0 riwayat</span>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th style="width:80px">Tipe</th>
+              <th>Target</th>
+              <th>Info</th>
+              <th>Risk</th>
+              <th>Temuan</th>
+              <th>Waktu Scan</th>
+              <th style="width:50px"></th>
+            </tr></thead>
+            <tbody id="histTbody">
+              <tr><td colspan="7"><div class="loading-row"><div class="spin"></div>Memuat riwayat…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /monitor -->
+
+    <!-- ════════ NIK / KTP ════════ -->
+    <div class="page" id="page-nik">
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M14 9h4M14 13h2M5 17c.5-1.5 1.5-2.5 3-2.5s2.5 1 3 2.5"/></svg>
+            Deteksi Kebocoran NIK / KTP
+          </div>
+          <span style="font-size:11px;color:var(--muted)">Cek eksposur NIK di internet publik via Google Dork</span>
+        </div>
+        <div class="form-grid" style="grid-template-columns:1fr auto">
+          <div class="fg">
+            <label>Nomor Induk Kependudukan (16 digit)</label>
+            <input id="fNIK" type="text" placeholder="3273011501900001" maxlength="16"
+                   style="font-family:'JetBrains Mono',monospace;letter-spacing:2px">
+          </div>
+          <button class="btn btn-primary" id="btnNIKScan" style="align-self:flex-end">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Pindai NIK
+          </button>
+        </div>
+      </div>
+
+      <div class="card" id="nikPanel" style="display:none">
+        <div class="card-head">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Hasil Pemindaian NIK
+          </div>
+          <div id="nikRiskBadge"></div>
+        </div>
+        <div id="nikLoad" class="loading-row" style="display:none"><div class="spin"></div>Memindai NIK di internet…</div>
+        <div id="nikRes" style="display:none;padding:18px 20px">
+          <div id="nikBanner" class="risk-banner"></div>
+          <div style="font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Informasi NIK</div>
+          <div class="nik-meta-grid" id="nikMeta"></div>
+          <div id="nikFindWrap" style="display:none">
+            <div style="font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Temuan Kebocoran</div>
+            <div id="nikFindings"></div>
+          </div>
+          <!-- Action bar -->
+          <div style="display:flex;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap">
+            <button class="btn btn-primary" id="nikBtnRescan">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+              Pindai Ulang
+            </button>
+            <button class="btn btn-ghost" id="nikBtnNew">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              NIK Baru
+            </button>
+            <button class="btn btn-ghost" id="nikBtnHistory">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Lihat Riwayat
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /nik -->
+
+    <!-- ════════ PHONE SCAN ════════ -->
+    <div class="page" id="page-phone">
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+            Deteksi Kebocoran Nomor Telepon
+          </div>
+          <span style="font-size:11px;color:var(--muted)">Cek eksposur nomor di internet publik via Google Dork</span>
+        </div>
+        <div class="form-grid" style="grid-template-columns:1fr auto">
+          <div class="fg">
+            <label>Nomor Telepon (format: 08xxx atau +62xxx)</label>
+            <input id="fPhone2" type="text" placeholder="08123456789"
+                   style="font-family:'JetBrains Mono',monospace;letter-spacing:2px" maxlength="15">
+          </div>
+          <button class="btn btn-primary" id="btnPhoneScan" style="align-self:flex-end">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Pindai Nomor
+          </button>
+        </div>
+      </div>
+
+      <div class="card" id="phonePanel" style="display:none">
+        <div class="card-head">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Hasil Pemindaian Nomor Telepon
+          </div>
+          <div id="phoneRiskBadge"></div>
+        </div>
+        <div id="phoneLoad" class="loading-row" style="display:none"><div class="spin"></div>Memindai nomor di internet…</div>
+        <div id="phoneRes" style="display:none;padding:18px 20px">
+          <div id="phoneBanner" class="risk-banner"></div>
+          <div style="font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:14px 0 10px">Informasi Nomor</div>
+          <div class="nik-meta-grid" id="phoneMeta"></div>
+          <div id="phoneFindWrap" style="display:none">
+            <div style="font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Temuan Kebocoran</div>
+            <div id="phoneFindings"></div>
+          </div>
+          <!-- Action bar -->
+          <div style="display:flex;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap">
+            <button class="btn btn-primary" id="phoneBtnRescan">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+              Pindai Ulang
+            </button>
+            <button class="btn btn-ghost" id="phoneBtnNew">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nomor Baru
+            </button>
+            <button class="btn btn-ghost" id="phoneBtnHistory">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Lihat Riwayat
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /phone -->
+
+    <!-- ════════ EMAIL SCAN ════════ -->
+    <div class="page" id="page-email">
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Deteksi Kebocoran Email
+          </div>
+          <span style="font-size:11px;color:var(--muted)">LeakCheck.io + Google Dork · 2 lapisan pengecekan</span>
+        </div>
+        <div class="form-grid" style="grid-template-columns:1fr auto">
+          <div class="fg">
+            <label>Alamat Email</label>
+            <input id="fEmailScan" type="email" placeholder="contoh@email.com">
+          </div>
+          <button class="btn btn-primary" id="btnEmailScan" style="align-self:flex-end">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Pindai Email
+          </button>
+        </div>
+      </div>
+
+      <div class="card" id="emailPanel" style="display:none">
+        <div class="card-head">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Hasil Pemindaian Email
+          </div>
+          <div id="emailRiskBadge"></div>
+        </div>
+        <div id="emailLoad" class="loading-row" style="display:none"><div class="spin"></div>Memeriksa email di database kebocoran & internet…</div>
+        <div id="emailRes" style="display:none; padding:18px 20px">
+
+          <div id="emailBanner" class="risk-banner"></div>
+
+          <!-- Dua kolom sumber: LeakCheck + Dork -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin:18px 0 6px">
+
+            <!-- LeakCheck card -->
+            <div class="card" style="margin:0" id="leakCheckCard">
+              <div class="card-head" style="padding:10px 15px">
+                <div class="card-title" style="font-size:11.5px">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  LeakCheck.io
+                </div>
+                <span style="font-size:10px;color:var(--muted)">Database breach</span>
+              </div>
+              <div style="padding:14px 16px">
+                <div style="font-size:32px;font-weight:800;letter-spacing:-1.5px;line-height:1" id="lcCount">0</div>
+                <div style="font-size:11px;color:var(--muted);margin:4px 0 12px">database breach ditemukan</div>
+                <div id="lcSources" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+              </div>
             </div>
-          </td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 
-  <!-- AI Analysis panel -->
-  <div class="panel" id="aiPanel" style="display:none">
-    <div class="panel-head">
-      <div class="panel-title">🤖 Analisis AI</div>
-      <div class="panel-actions">
-        <div id="aiRiskBadge"></div>
-      </div>
-    </div>
-    <div style="padding:18px 20px">
-      <div id="aiLoading" style="display:none;color:var(--muted);font-size:13px">⟳ Menganalisis data dengan AI...</div>
-      <div id="aiResult" style="display:none">
-        <p style="font-size:13px;line-height:1.7;margin-bottom:14px" id="aiSummary"></p>
-        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Rekomendasi</div>
-        <ul id="aiRecs" style="list-style:none;display:flex;flex-direction:column;gap:6px"></ul>
-      </div>
-    </div>
-  </div>
+            <!-- Dork card -->
+            <div class="card" style="margin:0" id="dorkCard">
+              <div class="card-head" style="padding:10px 15px">
+                <div class="card-title" style="font-size:11.5px">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Google Dork
+                </div>
+                <span style="font-size:10px;color:var(--muted)">Eksposur publik</span>
+              </div>
+              <div style="padding:14px 16px">
+                <div style="font-size:32px;font-weight:800;letter-spacing:-1.5px;line-height:1" id="dorkCount">0</div>
+                <div style="font-size:11px;color:var(--muted);margin:4px 0 12px">halaman publik ditemukan</div>
+                <div id="dorkSourceTags" style="display:flex;flex-wrap:wrap;gap:5px"></div>
+              </div>
+            </div>
 
-  <!-- Add form panel -->
-  <div class="panel">
-    <div class="panel-head">
-      <div class="panel-title">➕ Tambah Data Monitor</div>
-    </div>
-    <div class="form-row">
-      <div class="fg">
-        <label>No Telepon</label>
-        <input id="fPhone" type="text" placeholder="08xxxxxxxxxx">
-      </div>
-      <div class="fg">
-        <label>Email Target</label>
-        <input id="fEmail" type="email" placeholder="user@email.com">
-      </div>
-      <button class="btn btn-green" id="btnAdd">Tambah</button>
-    </div>
-  </div>
+          </div>
 
-  <!-- NIK / KTP Scan panel -->
-  <div class="panel">
-    <div class="panel-head">
-      <div class="panel-title">🪪 Deteksi Kebocoran NIK / KTP</div>
-      <div class="panel-actions">
-        <span style="font-size:11px;color:var(--muted)">Cek apakah NIK terekspos di internet publik</span>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="fg">
-        <label>Nomor NIK (16 digit)</label>
-        <input id="fNIK" type="text" placeholder="3273xxxxxxxxxx" maxlength="16" pattern="\d{16}">
-      </div>
-      <button class="btn btn-blue" id="btnNIKScan">🔍 Scan NIK</button>
-    </div>
-  </div>
+          <div style="font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin:18px 0 10px">Informasi Email</div>
+          <div class="nik-meta-grid" id="emailMeta"></div>
 
-  <!-- NIK Result panel -->
-  <div class="panel" id="nikPanel" style="display:none">
-    <div class="panel-head">
-      <div class="panel-title">🪪 Hasil Scan NIK</div>
-      <div class="panel-actions">
-        <div id="nikRiskBadge"></div>
-      </div>
-    </div>
-    <div style="padding:18px 20px">
-      <div id="nikLoading" style="display:none;color:var(--muted);font-size:13px">⟳ Memindai NIK di internet...</div>
-      <div id="nikResult" style="display:none">
-        <!-- Risk banner -->
-        <div id="nikBanner" class="risk-banner"></div>
-        <!-- Metadata NIK -->
-        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Informasi NIK</div>
-        <div class="nik-meta" id="nikMeta"></div>
-        <!-- Temuan kebocoran -->
-        <div id="nikFindingsWrap" style="display:none">
-          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Temuan Kebocoran</div>
-          <div class="nik-findings" id="nikFindings"></div>
+          <div id="emailFindWrap" style="display:none">
+            <div style="font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Temuan Google Dork</div>
+            <div id="emailFindings"></div>
+          </div>
+
+          <!-- Action bar -->
+          <div style="display:flex;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap">
+            <button class="btn btn-primary" id="emailBtnRescan">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+              Pindai Ulang
+            </button>
+            <button class="btn btn-ghost" id="emailBtnNew">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Email Baru
+            </button>
+            <button class="btn btn-ghost" id="emailBtnHistory">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              Lihat Riwayat
+            </button>
+          </div>
+
         </div>
       </div>
-    </div>
-  </div>
 
+    </div><!-- /email -->
+
+    <!-- ════════ LAPORAN ════════ -->
+    <div class="page" id="page-laporan">
+
+      <!-- Print-only header -->
+      <div class="print-header">
+        <div class="print-header-brand">
+          <div class="print-header-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z" fill="rgba(255,255,255,.92)"/><path d="M9 12l2 2 4-4" stroke="#0D1220" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div class="print-header-name">SecureWatch</div>
+            <div style="font-size:10px;color:#3A4F72">Data Leak Intelligence</div>
+          </div>
+        </div>
+        <div class="print-header-meta">
+          <div style="font-weight:700;font-size:13px">Laporan Keamanan Data</div>
+          <div id="printDate" style="margin-top:2px"></div>
+        </div>
+      </div>
+
+      <!-- Page header -->
+      <div class="lap-header">
+        <div class="lap-header-left">
+          <div class="lap-title">Laporan & Insight Keamanan</div>
+          <div class="lap-subtitle" id="lapSubtitle">Memuat data…</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" id="btnRefreshInsight">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Perbarui
+          </button>
+          <button class="btn btn-pdf" id="btnPDF">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Unduh PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI strip -->
+      <div class="kpi-strip" id="kpiStrip">
+        <div class="kpi k-blue"><div class="kpi-lbl">Total Scan</div><div class="kpi-val" id="kpiTotal">—</div><div class="kpi-sub">semua tipe</div></div>
+        <div class="kpi k-red"><div class="kpi-lbl">Terekspos</div><div class="kpi-val" id="kpiBocor">—</div><div class="kpi-sub">berisiko</div></div>
+        <div class="kpi k-green"><div class="kpi-lbl">Aman</div><div class="kpi-val" id="kpiAman">—</div><div class="kpi-sub">tidak ditemukan</div></div>
+        <div class="kpi k-orange"><div class="kpi-lbl">Kritis</div><div class="kpi-val" id="kpiKritis">—</div><div class="kpi-sub">prioritas tinggi</div></div>
+        <div class="kpi k-purple"><div class="kpi-lbl">Rate Bocor</div><div class="kpi-val" id="kpiRate">—</div><div class="kpi-sub">persentase</div></div>
+      </div>
+
+      <!-- Tri chart row -->
+      <div class="tri-grid">
+
+        <!-- Ring chart risk distribution -->
+        <div class="card" style="margin:0">
+          <div class="card-head" style="padding:11px 16px">
+            <div class="card-title" style="font-size:11.5px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+              Distribusi Risiko
+            </div>
+          </div>
+          <div class="ring-wrap" id="ringWrap">
+            <div class="empty" style="padding:20px 10px"><div class="ei" style="font-size:26px">📊</div><p style="font-size:12px">Belum ada data</p></div>
+          </div>
+        </div>
+
+        <!-- Type breakdown -->
+        <div class="card" style="margin:0">
+          <div class="card-head" style="padding:11px 16px">
+            <div class="card-title" style="font-size:11.5px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+              Tipe Scan
+            </div>
+          </div>
+          <div class="type-bars" id="typeBars">
+            <div class="empty" style="padding:10px"><p style="font-size:12px">Belum ada data</p></div>
+          </div>
+        </div>
+
+        <!-- Activity sparkline -->
+        <div class="card" style="margin:0">
+          <div class="card-head" style="padding:11px 16px">
+            <div class="card-title" style="font-size:11.5px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Aktivitas 7 Hari
+            </div>
+          </div>
+          <div class="sparkline-wrap" id="sparkWrap">
+            <div class="empty" style="padding:10px"><p style="font-size:12px">Belum ada data</p></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Source bar chart full width -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+            Top Sumber Kebocoran
+          </div>
+          <span id="srcTotal" style="font-size:11px;color:var(--muted)"></span>
+        </div>
+        <div id="srcChart" style="padding:18px 24px">
+          <div class="empty"><div class="ei">📡</div><p>Belum ada sumber bocor</p></div>
+        </div>
+      </div>
+
+      <!-- Two column: breach sources + recent findings -->
+      <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:13px;margin-bottom:14px">
+
+        <!-- Breach source tags -->
+        <div class="card" style="margin:0">
+          <div class="card-head">
+            <div class="card-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              Platform Breach Email
+            </div>
+          </div>
+          <div class="breach-cloud" id="breachCloud">
+            <div class="empty" style="padding:16px 0;width:100%"><p style="font-size:12px">Belum ada data</p></div>
+          </div>
+        </div>
+
+        <!-- Recent leaked targets -->
+        <div class="card" style="margin:0">
+          <div class="card-head">
+            <div class="card-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+              Target Berisiko Terbaru
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="rft">
+              <thead><tr><th>Tipe</th><th>Target</th><th>Risk</th><th>Temuan</th><th>Waktu</th></tr></thead>
+              <tbody id="rftBody"><tr><td colspan="5"><div class="empty" style="padding:16px"><p style="font-size:12px">Belum ada data</p></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Insight cards -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Ringkasan Insight Otomatis
+          </div>
+          <span style="font-size:11px;color:var(--muted)">Dihasilkan dari data scan</span>
+        </div>
+        <div class="insight-grid" id="insightList"></div>
+      </div>
+
+    </div><!-- /laporan -->
+
+  </main>
 </div>
 
 <div class="toast-wrap" id="toasts"></div>
 
 <script>
-  const BASE    = 'http://localhost:5000';
-  const U_EMAIL = 'ferta966@gmail.com';
+  const BASE = 'http://localhost:5000';
+  let histRows = [], histFilter = '';
 
-  let rows     = [];
-  let selected = new Set();
+  /* ── AUTH GUARD ── */
+  (async () => {
+    const token = localStorage.getItem('sw-token');
+    if (!token) { window.location.replace('/login'); return; }
+    try {
+      const r = await fetch(`${BASE}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!r.ok) { localStorage.removeItem('sw-token'); window.location.replace('/login'); return; }
+      const user = await r.json();
+      document.getElementById('userNameLabel').textContent = user.name || user.email;
+    } catch {
+      window.location.replace('/login');
+    }
+  })();
 
-  /* ── GraphQL ── */
-  async function gql(query, vars = {}) {
-    const r = await fetch(`${BASE}/graphql`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables: vars })
-    });
-    const j = await r.json();
-    if (j.errors) throw new Error(j.errors[0].message);
-    return j.data;
+  document.getElementById('btnLogout').addEventListener('click', () => {
+    if (!confirm('Keluar dari SecureWatch?')) return;
+    localStorage.removeItem('sw-token');
+    localStorage.removeItem('sw-user');
+    window.location.replace('/login');
+  });
+
+  /* ── THEME ── */
+  const html = document.documentElement;
+  let dark = localStorage.getItem('sw-theme') !== 'light';
+  function applyTheme() {
+    html.dataset.theme = dark ? 'dark' : 'light';
+    document.getElementById('iMoon').style.display = dark ? '' : 'none';
+    document.getElementById('iSun').style.display  = dark ? 'none' : '';
+  }
+  document.getElementById('themeBtn').onclick = () => {
+    dark = !dark; localStorage.setItem('sw-theme', dark ? 'dark' : 'light'); applyTheme();
+  };
+  applyTheme();
+
+  /* ── NAVIGATION ── */
+  const pageMeta = {
+    dashboard: ['Dashboard',           'Ringkasan pemantauan kebocoran data'],
+    monitor:   ['Data Monitor',        'Kelola dan pindai target email / nomor telepon'],
+    nik:       ['Deteksi NIK / KTP',   'Pindai eksposur NIK di internet publik'],
+    phone:     ['Deteksi No. Telepon', 'Pindai eksposur nomor telepon di internet publik'],
+    email:     ['Deteksi Email Bocor', 'Cek kebocoran email via LeakCheck & Google Dork'],
+    laporan:   ['Laporan & Insight',   'Analitik dan rekap kebocoran data'],
+  };
+
+  function navigate(p) {
+    document.querySelectorAll('.nav-item').forEach(el =>
+      el.classList.toggle('active', el.dataset.page === p));
+    document.querySelectorAll('.page').forEach(el =>
+      el.classList.toggle('active', el.id === `page-${p}`));
+    const [title, sub] = pageMeta[p] || [p, ''];
+    document.getElementById('tbPage').textContent = title;
+    document.getElementById('tbSub').textContent  = sub;
+    if (p === 'laporan') buildLaporan();
   }
 
-  /* ── Toast ── */
+  document.querySelectorAll('.nav-item[data-page]').forEach(el =>
+    el.addEventListener('click', () => navigate(el.dataset.page)));
+
+  /* ── TOAST ── */
   function toast(msg, type = 'inf') {
-    const icons = { ok: '✅', err: '❌', inf: 'ℹ️' };
+    const c = {ok:'var(--success)',err:'var(--danger)',inf:'var(--accent)'};
+    const i = {ok:'✓', err:'✕', inf:'i'};
     const el = document.createElement('div');
     el.className = `toast ${type}`;
-    el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+    el.innerHTML = `<span style="width:18px;height:18px;border-radius:50%;background:${c[type]};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${i[type]}</span><span>${msg}</span>`;
     document.getElementById('toasts').appendChild(el);
     setTimeout(() => el.remove(), 4500);
   }
 
-  /* ── Badges ── */
-  function statusBadge(s) {
-    const map = {
-      1: ['b-wait', '⏳ Menunggu'],
-      2: ['b-scan', '⟳ Scanning'],
-      3: ['b-done', '✓ Selesai'],
-    };
-    const [cls, txt] = map[s] || ['b-wait', s];
-    return `<span class="badge ${cls}">${txt}</span>`;
+  /* ── HISTORY RENDER ── */
+  const riskBadgeHtml = {
+    KRITIS: `<span class="badge b-bocor" style="background:rgba(255,59,78,.12);border-color:rgba(255,59,78,.3)">🚨 KRITIS</span>`,
+    TINGGI: `<span class="badge" style="background:rgba(255,113,40,.12);color:var(--orange);border:1px solid rgba(255,113,40,.3)">⚠ TINGGI</span>`,
+    SEDANG: `<span class="badge b-wait">⚠ SEDANG</span>`,
+    AMAN:   `<span class="badge b-aman">✓ AMAN</span>`,
+  };
+  const typeIcon = {
+    NIK:   `<span style="background:rgba(139,92,246,.15);color:var(--purple);border:1px solid rgba(139,92,246,.3);border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700">NIK</span>`,
+    PHONE: `<span style="background:rgba(61,114,255,.15);color:var(--accent2);border:1px solid rgba(61,114,255,.3);border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700">TEL</span>`,
+    EMAIL: `<span style="background:rgba(24,201,126,.15);color:var(--success);border:1px solid rgba(24,201,126,.3);border-radius:5px;padding:2px 8px;font-size:10px;font-weight:700">EMAIL</span>`,
+  };
+
+  function extraInfo(r) {
+    if (r.type === 'NIK')   return r.province ? `${r.province} · ${r.gender} · ${r.dob}` : '—';
+    if (r.type === 'PHONE') return r.provider ? `${r.provider} · ${r.phoneType||''}` : '—';
+    if (r.type === 'EMAIL') return `${r.breachCount||0} breach · ${r.dorkCount||0} dork`;
+    return '—';
   }
 
-  function leakBadge(ls) {
-    return ls === 1
-      ? `<span class="badge b-bocor">⚠ Bocor</span>`
-      : `<span class="badge b-aman">✓ Aman</span>`;
+  function timeAgo(date) {
+    const s = Math.floor((Date.now() - new Date(date)) / 1000);
+    if (s < 60)   return `${s}d lalu`;
+    if (s < 3600) return `${Math.floor(s/60)}m lalu`;
+    if (s < 86400)return `${Math.floor(s/3600)}j lalu`;
+    return new Date(date).toLocaleDateString('id-ID');
   }
 
-  function leakTags(locs) {
-    if (!locs || locs.length === 0)
-      return `<span style="color:var(--muted);font-size:11px">—</span>`;
-    return `<div class="tags">${locs.map(l => `<span class="tag">${l}</span>`).join('')}</div>`;
-  }
+  function renderHistory(data) {
+    histRows = data || [];
+    const filtered = histFilter ? histRows.filter(r => r.type === histFilter) : histRows;
 
-  /* ── Render ── */
-  function render(data) {
-    rows = data || [];
-    updateStats(rows);
-    updateSelInfo();
+    // Update dashboard stats
+    document.getElementById('sTotal').textContent   = histRows.length;
+    document.getElementById('sBocor').textContent   = histRows.filter(r => r.riskLevel !== 'AMAN').length;
+    document.getElementById('sAman').textContent    = histRows.filter(r => r.riskLevel === 'AMAN').length;
+    document.getElementById('sPending').textContent = histRows.filter(r => r.riskLevel === 'SEDANG').length;
 
-    const tbody = document.getElementById('tbody');
+    const bocorN = histRows.filter(r => r.riskLevel !== 'AMAN').length;
+    const chip = document.getElementById('navChip');
+    chip.textContent = bocorN; chip.style.display = bocorN > 0 ? '' : 'none';
 
-    if (rows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6">
-        <div class="empty"><div class="ei">📭</div><p>Belum ada data yang dipantau</p></div>
-      </td></tr>`;
+    document.getElementById('histCount').textContent = `${filtered.length} riwayat`;
+
+    const tbody = document.getElementById('histTbody');
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty"><div class="ei">📭</div><p>Belum ada riwayat scan${histFilter ? ' untuk tipe ini' : ''}</p></div></td></tr>`;
       return;
     }
 
-    tbody.innerHTML = rows.map(r => `
+    tbody.innerHTML = filtered.map(r => `
       <tr>
-        <td><input type="checkbox" class="rchk" data-p="${r.phone}" ${selected.has(r.phone) ? 'checked' : ''}></td>
-        <td class="mono">${r.phone}</td>
-        <td>${r.email}</td>
-        <td>${statusBadge(r.status)}</td>
-        <td>${leakBadge(r.leakStatus)}</td>
-        <td>${leakTags(r.leakLocation)}</td>
-      </tr>
-    `).join('');
+        <td>${typeIcon[r.type] || r.type}</td>
+        <td class="mono" style="font-size:12px">${r.target}</td>
+        <td style="font-size:11px;color:var(--text2)">${extraInfo(r)}</td>
+        <td>${riskBadgeHtml[r.riskLevel] || r.riskLevel}</td>
+        <td style="font-size:12px;font-family:'JetBrains Mono',monospace">${r.leakCount || 0}</td>
+        <td style="font-size:11px;color:var(--muted)">${timeAgo(r.scannedAt)}</td>
+        <td>
+          <button class="hist-del" data-id="${r._id}" title="Hapus riwayat"
+            style="background:rgba(255,59,78,.1);border:1px solid rgba(255,59,78,.25);color:var(--danger);
+                   border-radius:var(--r-sm);width:28px;height:28px;display:flex;align-items:center;
+                   justify-content:center;cursor:pointer;transition:all .16s">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+          </button>
+        </td>
+      </tr>`).join('');
 
-    document.querySelectorAll('.rchk').forEach(cb => {
-      cb.addEventListener('change', () => {
-        cb.checked ? selected.add(cb.dataset.p) : selected.delete(cb.dataset.p);
-        syncSelAll();
-        updateSelInfo();
-      });
-    });
-
-    syncSelAll();
-
-    // last updated
-    const now = new Date().toLocaleTimeString('id-ID');
-    document.getElementById('lastUpd').innerHTML =
-      `<span>· Diperbarui ${now}</span>`;
-  }
-
-  function updateStats(data) {
-    document.getElementById('sTotal').textContent   = data.length;
-    document.getElementById('sBocor').textContent   = data.filter(d => d.leakStatus === 1).length;
-    document.getElementById('sAman').textContent    = data.filter(d => d.status === 3 && d.leakStatus !== 1).length;
-    document.getElementById('sPending').textContent = data.filter(d => d.status === 1).length;
-  }
-
-  function updateSelInfo() {
-    const n = selected.size;
-    document.getElementById('selInfo').classList.toggle('show', n > 0);
-    document.getElementById('selCount').textContent = n;
-  }
-
-  function syncSelAll() {
-    document.getElementById('selAll').checked =
-      rows.length > 0 && rows.every(r => selected.has(r.phone));
-  }
-
-  /* ── Select all ── */
-  document.getElementById('selAll').addEventListener('change', function () {
-    this.checked ? rows.forEach(r => selected.add(r.phone)) : selected.clear();
-    render(rows);
-  });
-
-  /* ── Load data ── */
-  async function loadData() {
-    try {
-      const d = await gql(`
-        query($e: String!) {
-          getUserLeak(userEmail: $e) { phone email status leakStatus leakLocation }
-        }`, { e: U_EMAIL });
-      render(d.getUserLeak || []);
-    } catch (e) {
-      toast('Gagal memuat: ' + e.message, 'err');
-    }
-  }
-
-  /* ── SSE ── */
-  function connectSSE() {
-    const dot   = document.getElementById('sseDot');
-    const label = document.getElementById('sseLabel');
-    const es    = new EventSource(`${BASE}/events`);
-
-    es.onopen = () => {
-      dot.className = 'sse-dot on';
-      label.textContent = 'SSE Terhubung (Live)';
-    };
-
-    es.onmessage = ev => {
+    document.querySelectorAll('.hist-del').forEach(btn => btn.addEventListener('click', async () => {
+      if (!confirm('Hapus riwayat scan ini?')) return;
+      btn.disabled = true;
+      btn.innerHTML = `<div class="spin" style="width:11px;height:11px;border-width:1.5px"></div>`;
       try {
-        const data = JSON.parse(ev.data);
-        render(data);
-      } catch {}
-    };
-
-    es.onerror = () => {
-      dot.className = 'sse-dot off';
-      label.textContent = 'SSE Terputus';
-    };
+        await fetch(`${BASE}/api/scan-history/${btn.dataset.id}`, { method: 'DELETE' });
+        toast('Riwayat dihapus', 'ok');
+        await loadHistory();
+      } catch(e) { toast('Gagal: ' + e.message, 'err'); btn.disabled = false; }
+    }));
   }
 
-  /* ── Scan ── */
-  document.getElementById('btnScan').addEventListener('click', async () => {
-    if (selected.size === 0) { toast('Pilih minimal 1 data untuk di-scan', 'err'); return; }
-    const btn = document.getElementById('btnScan');
-    btn.disabled = true;
-    btn.textContent = '⟳ Scanning...';
+  /* ── LOAD HISTORY ── */
+  async function loadHistory() {
     try {
-      const d = await gql(`
-        mutation($e: String!, $p: [String!]) {
-          updateLeakStatus(userEmail: $e, phone: $p) { message }
-        }`, { e: U_EMAIL, p: [...selected] });
-      toast(d.updateLeakStatus?.message || 'Scan selesai', 'ok');
-      selected.clear();
-      await loadData();
-    } catch (e) {
-      toast('Scan gagal: ' + e.message, 'err');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '🔍 Scan Dipilih';
-    }
+      const r = await fetch(`${BASE}/api/scan-history?limit=200`);
+      const data = await r.json();
+      renderHistory(data);
+    } catch(e) { toast('Gagal memuat riwayat: ' + e.message, 'err'); }
+  }
+
+  /* ── FILTER TABS ── */
+  document.querySelectorAll('.hist-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.hist-filter').forEach(b => {
+        b.classList.remove('active', 'btn-primary');
+        b.classList.add('btn-ghost');
+      });
+      btn.classList.add('active', 'btn-primary');
+      btn.classList.remove('btn-ghost');
+      histFilter = btn.dataset.type;
+      renderHistory(histRows);
+    });
   });
 
-  /* ── Refresh ── */
-  document.getElementById('btnRefresh').addEventListener('click', loadData);
-
-  /* ── Add ── */
-  document.getElementById('btnAdd').addEventListener('click', async () => {
-    const phone = document.getElementById('fPhone').value.trim();
-    const email = document.getElementById('fEmail').value.trim();
-    if (!phone || !email) { toast('Phone dan email wajib diisi', 'err'); return; }
-
-    const btn = document.getElementById('btnAdd');
+  document.getElementById('btnRefreshHist').addEventListener('click', async () => {
+    const btn = document.getElementById('btnRefreshHist');
     btn.disabled = true;
-    try {
-      await gql(`
-        mutation($e: String!, $p: String!, $em: String!) {
-          addLeakItem(userEmail: $e, phone: $p, email: $em) { phone email }
-        }`, { e: U_EMAIL, p: phone, em: email });
-      toast(`${email} berhasil ditambahkan`, 'ok');
-      document.getElementById('fPhone').value = '';
-      document.getElementById('fEmail').value = '';
-      await loadData();
-    } catch (e) {
-      toast('Gagal: ' + e.message, 'err');
-    } finally {
-      btn.disabled = false;
-    }
+    btn.innerHTML = `<div class="spin" style="width:12px;height:12px;border-width:1.5px"></div> Memuat…`;
+    await loadHistory();
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> Refresh`;
+    toast('Riwayat diperbarui', 'ok');
   });
 
-  /* ── Enter submit form ── */
-  ['fPhone', 'fEmail'].forEach(id =>
-    document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('btnAdd').click();
-    })
-  );
+  /* ── SSE (tetap untuk koneksi status) ── */
+  function connectSSE() {
+    const dot = document.getElementById('sseDot'), lbl = document.getElementById('sseLabel');
+    const es = new EventSource(`${BASE}/events`);
+    es.onopen  = () => { dot.className='sse-dot on';  lbl.textContent='Live · Terhubung'; };
+    es.onerror = () => { dot.className='sse-dot off'; lbl.textContent='Terputus'; };
+  }
 
-  /* ── AI Analyze ── */
+  /* ── AI ANALYZE ── */
+  const riskCfg = {
+    KRITIS:{cls:'kritis',c:'var(--danger)',  bg:'rgba(255,59,78,.12)',  icon:'🚨'},
+    TINGGI:{cls:'tinggi',c:'var(--orange)',  bg:'rgba(255,113,40,.12)', icon:'⚠️'},
+    SEDANG:{cls:'sedang',c:'var(--warning)', bg:'rgba(255,170,0,.12)',  icon:'⚠️'},
+    RENDAH:{cls:'aman',  c:'var(--success)', bg:'rgba(24,201,126,.12)', icon:'✅'},
+    AMAN:  {cls:'aman',  c:'var(--success)', bg:'rgba(24,201,126,.12)', icon:'✅'},
+  };
+
   document.getElementById('btnAnalyze').addEventListener('click', async () => {
-    if (rows.length === 0) { toast('Belum ada data untuk dianalisis', 'err'); return; }
-
-    const btn = document.getElementById('btnAnalyze');
-    btn.disabled = true;
-    btn.textContent = '⟳ Menganalisis...';
-
-    const panel = document.getElementById('aiPanel');
-    const loading = document.getElementById('aiLoading');
-    const result = document.getElementById('aiResult');
-
-    panel.style.display = 'block';
-    loading.style.display = 'block';
-    result.style.display = 'none';
-    panel.scrollIntoView({ behavior: 'smooth' });
-
+    if (!histRows.length) { toast('Belum ada data scan','err'); return; }
+    const btn=document.getElementById('btnAnalyze'),
+          load=document.getElementById('aiLoad'),
+          empty=document.getElementById('aiEmpty'),
+          res=document.getElementById('aiRes');
+    btn.disabled=true;
+    btn.innerHTML=`<div class="spin" style="width:12px;height:12px;border-width:1.5px"></div> Menganalisis…`;
+    load.style.display='flex'; empty.style.display='none'; res.style.display='none';
     try {
-      const res = await fetch(`${BASE}/api/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leakItems: rows })
-      });
-      const data = await res.json();
-
-      // Risk badge
-      const riskColors = {
-        KRITIS: 'var(--red)', TINGGI: 'var(--orange)',
-        SEDANG: 'var(--yellow)', RENDAH: 'var(--green)', AMAN: 'var(--green)'
-      };
-      const riskColor = riskColors[data.riskLevel] || 'var(--muted)';
-      const srcLabel = data.source === 'ai' ? '🤖 AI' : '📐 Analisis Lokal';
-      document.getElementById('aiRiskBadge').innerHTML =
-        `<span class="badge" style="background:${riskColor}22;color:${riskColor};font-size:12px;padding:4px 12px">
-          ⚡ Risiko: ${data.riskLevel}
-        </span>
-        <span style="font-size:11px;color:var(--muted);margin-left:8px">${srcLabel}</span>`;
-
-      document.getElementById('aiSummary').textContent = data.summary;
-
-      const recs = document.getElementById('aiRecs');
-      recs.innerHTML = (data.recommendations || []).map((r, i) =>
-        `<li style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5">
-          <span style="color:var(--blue);font-weight:700;flex-shrink:0">${i + 1}.</span>
-          <span>${r}</span>
-        </li>`
-      ).join('');
-
-      loading.style.display = 'none';
-      result.style.display = 'block';
-      toast('Analisis AI selesai', 'ok');
-    } catch (e) {
-      loading.style.display = 'none';
-      toast('Analisis gagal: ' + e.message, 'err');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '🤖 Analisis AI';
+      const leakItems = histRows.map(r => ({
+        phone:        r.target,
+        email:        r.type === 'EMAIL' ? r.target : '',
+        status:       3,
+        leakStatus:   r.isLeaked ? 1 : 0,
+        leakLocation: (r.findings||[]).map(f=>f.source).filter(Boolean),
+      }));
+      const r = await fetch(`${BASE}/api/analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({leakItems})});
+      const data = await r.json();
+      const cfg = riskCfg[data.riskLevel] || riskCfg.AMAN;
+      document.getElementById('aiHeader').className=`risk-banner ${cfg.cls}`;
+      document.getElementById('aiPill').textContent=`${cfg.icon} ${data.riskLevel}`;
+      document.getElementById('aiPill').style=`background:${cfg.bg};color:${cfg.c}`;
+      document.getElementById('aiSum').textContent=data.summary;
+      document.getElementById('aiRecs').innerHTML=(data.recommendations||[]).map((r,i)=>
+        `<div class="rec"><div class="rec-n">${i+1}</div><span>${r}</span></div>`).join('');
+      document.getElementById('aiSrcLbl').textContent = data.source==='ai' ? `🤖 ${data.model||'AI'}` : '📐 Lokal';
+      load.style.display='none'; res.style.display='block';
+      toast('Analisis selesai','ok');
+    } catch(e) { load.style.display='none'; empty.style.display='block'; toast('Gagal: '+e.message,'err'); }
+    finally {
+      btn.disabled=false;
+      btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10"/><path d="M22 2L12 12M22 2h-6M22 2v6"/></svg> Analisis AI`;
     }
   });
 
-  /* ── NIK Scan ── */
+  /* ── NIK SCAN ── */
   document.getElementById('btnNIKScan').addEventListener('click', async () => {
-    const nik = document.getElementById('fNIK').value.trim().replace(/\s|-/g, '');
-    if (!nik) { toast('Masukkan NIK terlebih dahulu', 'err'); return; }
-    if (!/^\d{16}$/.test(nik)) { toast('NIK harus 16 digit angka', 'err'); return; }
+    const nik = document.getElementById('fNIK').value.trim().replace(/\s|-/g,'');
+    if (!nik) { toast('Masukkan NIK','err'); return; }
+    if (!/^\d{16}$/.test(nik)) { toast('NIK harus 16 digit angka','err'); return; }
 
-    const btn     = document.getElementById('btnNIKScan');
-    const panel   = document.getElementById('nikPanel');
-    const loading = document.getElementById('nikLoading');
-    const result  = document.getElementById('nikResult');
+    const btn=document.getElementById('btnNIKScan'),
+          panel=document.getElementById('nikPanel'),
+          load=document.getElementById('nikLoad'),
+          res=document.getElementById('nikRes');
 
-    btn.disabled     = true;
-    btn.textContent  = '⟳ Scanning...';
-    panel.style.display = 'block';
-    loading.style.display = 'block';
-    result.style.display  = 'none';
-    panel.scrollIntoView({ behavior: 'smooth' });
+    btn.disabled=true;
+    btn.innerHTML=`<div class="spin" style="width:12px;height:12px;border-width:1.5px"></div> Memindai…`;
+    panel.style.display='block'; load.style.display='flex'; res.style.display='none';
+    panel.scrollIntoView({behavior:'smooth'});
 
     try {
-      const res  = await fetch(`${BASE}/api/nik-scan`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ nik }),
-      });
-      const data = await res.json();
+      const r = await fetch(`${BASE}/api/nik-scan`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nik})});
+      const data = await r.json();
+      if (!data.valid) { load.style.display='none'; toast('NIK tidak valid: '+data.error,'err'); panel.style.display='none'; return; }
 
-      if (!data.valid) {
-        loading.style.display = 'none';
-        toast('NIK tidak valid: ' + data.error, 'err');
-        panel.style.display = 'none';
-        return;
-      }
-
-      // Risk badge di header panel
-      const riskColors = {
-        KRITIS: 'var(--red)', TINGGI: 'var(--orange)',
-        SEDANG: 'var(--yellow)', AMAN: 'var(--green)',
+      const rkCfg = {
+        KRITIS:{cls:'kritis',c:'var(--danger)',  msg:`NIK terdeteksi di <strong>${data.leakCount} lokasi</strong> — segera ambil tindakan.`,icon:'🚨'},
+        TINGGI:{cls:'tinggi',c:'var(--orange)',  msg:`NIK ditemukan di <strong>${data.leakCount} lokasi</strong>. Risiko tinggi.`,icon:'⚠️'},
+        SEDANG:{cls:'sedang',c:'var(--warning)', msg:`NIK muncul di <strong>${data.leakCount} lokasi</strong>. Pantau terus.`,icon:'⚠️'},
+        AMAN:  {cls:'aman',  c:'var(--success)', msg:'NIK <strong>tidak ditemukan</strong> dalam hasil pencarian publik saat ini.',icon:'✅'},
       };
-      const rc = riskColors[data.riskLevel] || 'var(--muted)';
-      document.getElementById('nikRiskBadge').innerHTML =
-        `<span class="badge" style="background:${rc}22;color:${rc};font-size:12px;padding:4px 12px">
-          ⚡ Risiko: ${data.riskLevel}
-        </span>`;
+      const rc = rkCfg[data.riskLevel] || rkCfg.AMAN;
 
-      // Risk banner
-      const bannerClass = { KRITIS:'kritis', TINGGI:'tinggi', SEDANG:'sedang', AMAN:'aman' }[data.riskLevel] || 'aman';
-      const bannerIcon  = { KRITIS:'🚨', TINGGI:'⚠️', SEDANG:'⚠️', AMAN:'✅' }[data.riskLevel];
-      const bannerMsg   = data.isLeaked
-        ? `NIK ini terdeteksi di <strong>${data.leakCount} lokasi</strong> di internet publik. Segera laporkan ke pihak berwenang.`
-        : `NIK ini <strong>tidak ditemukan</strong> dalam hasil pencarian publik. Tetap waspada.`;
-      document.getElementById('nikBanner').className = `risk-banner ${bannerClass}`;
-      document.getElementById('nikBanner').innerHTML =
-        `<span class="risk-icon">${bannerIcon}</span><span>${bannerMsg}</span>`;
+      document.getElementById('nikRiskBadge').innerHTML=
+        `<span class="badge" style="background:${rc.c}1A;color:${rc.c};border:1px solid ${rc.c}44;font-size:11px;padding:3px 12px">⚡ ${data.riskLevel}</span>`;
+      document.getElementById('nikBanner').className=`risk-banner ${rc.cls}`;
+      document.getElementById('nikBanner').innerHTML=`<span style="font-size:22px">${rc.icon}</span><span>${rc.msg}</span>`;
 
-      // Metadata NIK
-      const metaFields = [
-        { label: 'NIK',        val: data.nik.replace(/(\d{6})(\d{6})(\d{4})/, '$1-$2-$3') },
-        { label: 'Provinsi',   val: data.province },
-        { label: 'Jenis Kelamin', val: data.gender },
-        { label: 'Tgl Lahir',  val: data.dob },
-        { label: 'No. Urut',   val: data.sequence },
-        { label: 'Scan',       val: new Date(data.scannedAt).toLocaleString('id-ID') },
-      ];
-      document.getElementById('nikMeta').innerHTML = metaFields.map(f =>
-        `<div class="nik-meta-item">
-          <div class="nik-meta-label">${f.label}</div>
-          <div class="nik-meta-val">${f.val}</div>
-        </div>`
-      ).join('');
+      document.getElementById('nikMeta').innerHTML=[
+        ['NIK',      nik.replace(/(\d{6})(\d{6})(\d{4})/,'$1 · $2 · $3')],
+        ['Provinsi', data.province],
+        ['Kelamin',  data.gender],
+        ['Tgl Lahir',data.dob],
+        ['No. Urut', data.sequence],
+        ['Dipindai', new Date(data.scannedAt).toLocaleString('id-ID')],
+      ].map(([l,v])=>`<div class="nik-cell"><div class="nik-cell-lbl">${l}</div><div class="nik-cell-val">${v}</div></div>`).join('');
 
-      // Temuan
-      const findingsWrap = document.getElementById('nikFindingsWrap');
-      if (data.findings && data.findings.length > 0) {
-        findingsWrap.style.display = 'block';
-        document.getElementById('nikFindings').innerHTML = data.findings.map(f =>
-          `<div class="nik-finding-item">
-            <div class="nik-finding-host">⚠ ${f.source}</div>
-            <div class="nik-finding-title">${f.title || '(tanpa judul)'}</div>
-            ${f.snippet ? `<div class="nik-finding-snippet">${f.snippet}</div>` : ''}
-            <a class="nik-finding-link" href="${f.url}" target="_blank" rel="noopener">${f.url}</a>
-          </div>`
-        ).join('');
-      } else {
-        findingsWrap.style.display = 'none';
-      }
+      const fw = document.getElementById('nikFindWrap');
+      if (data.findings?.length) {
+        fw.style.display='block';
 
-      loading.style.display = 'none';
-      result.style.display  = 'block';
-      toast(data.isLeaked ? `NIK terdeteksi bocor di ${data.leakCount} tempat!` : 'NIK aman — tidak ditemukan di internet publik',
-            data.isLeaked ? 'err' : 'ok');
-    } catch (e) {
-      loading.style.display = 'none';
-      toast('Scan NIK gagal: ' + e.message, 'err');
-    } finally {
-      btn.disabled    = false;
-      btn.textContent = '🔍 Scan NIK';
+        // Confidence config per source & dork type
+        const SRC_CONF = {
+          'pastebin.com':   {level:'KRITIS',cls:'c-kritis',cfCls:'cf-kritis',icon:'🔴',desc:'Situs dump data publik'},
+          'github.com':     {level:'TINGGI',cls:'c-tinggi',cfCls:'cf-tinggi',icon:'🟠',desc:'Repository publik terbuka'},
+          'scribd.com':     {level:'TINGGI',cls:'c-tinggi',cfCls:'cf-tinggi',icon:'🟠',desc:'Dokumen terpublikasi'},
+          'gitlab.com':     {level:'TINGGI',cls:'c-tinggi',cfCls:'cf-tinggi',icon:'🟠',desc:'Repository publik terbuka'},
+          'docs.google.com':{level:'KRITIS',cls:'c-kritis',cfCls:'cf-kritis',icon:'🔴',desc:'Dokumen Google terbuka'},
+          'default':        {level:'SEDANG',cls:'c-sedang',cfCls:'cf-sedang',icon:'🟡',desc:'Sumber web umum'},
+        };
+        const DORK_CONF = {
+          'filetype:sql': {level:'KRITIS',cls:'c-kritis',cfCls:'cf-kritis',icon:'🔴',desc:'File dump database SQL'},
+          'filetype:csv': {level:'TINGGI',cls:'c-tinggi',cfCls:'cf-tinggi',icon:'🟠',desc:'File data terstruktur CSV'},
+        };
+
+        const getConf = (f) => {
+          for (const [key, cfg] of Object.entries(DORK_CONF)) {
+            if (f.query && f.query.includes(key)) return cfg;
+          }
+          return SRC_CONF[f.source] || SRC_CONF['default'];
+        };
+
+        // Group findings by source
+        const bySource = {};
+        data.findings.forEach(f => {
+          if (!bySource[f.source]) bySource[f.source] = { list: [], conf: getConf(f) };
+          bySource[f.source].list.push(f);
+        });
+
+        // Source breakdown cards
+        const srcCards = Object.entries(bySource).map(([src, {list, conf}]) =>
+          `<div class="src-card ${conf.cls}">
+            <div class="src-card-domain" title="${src}">${src}</div>
+            <div class="src-card-count">${list.length}</div>
+            <span class="confidence-badge ${conf.cfCls}">${conf.icon} ${conf.level}</span>
+            <div class="src-card-desc">${conf.desc}</div>
+          </div>`).join('');
+
+        // Individual finding cards with dork + confidence
+        const findCards = data.findings.map(f => {
+          const conf = getConf(f);
+          const shortQ = f.query && f.query.length > 50 ? f.query.slice(0,50)+'…' : f.query;
+          return `<div class="finding-card">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap">
+              <div class="finding-host">${conf.icon} ${f.source}</div>
+              <span class="confidence-badge ${conf.cfCls}">${conf.level}</span>
+              ${f.query ? `<span class="dork-tag" title="${f.query}">${shortQ}</span>` : ''}
+            </div>
+            <div class="finding-title">${f.title || '(tanpa judul)'}</div>
+            ${f.snippet ? `<div class="finding-snippet">${f.snippet}</div>` : ''}
+            <a class="finding-url" href="${f.url}" target="_blank" rel="noopener">${f.url}</a>
+          </div>`;
+        }).join('');
+
+        document.getElementById('nikFindings').innerHTML =
+          `<div class="src-section-lbl">Breakdown per Sumber</div>
+           <div class="src-breakdown">${srcCards}</div>
+           <div class="src-section-lbl">Detail Temuan</div>
+           ${findCards}`;
+      } else { fw.style.display='none'; }
+
+      load.style.display='none'; res.style.display='block';
+      toast(data.isLeaked?`NIK bocor di ${data.leakCount} lokasi!`:'NIK aman — tidak ditemukan', data.isLeaked?'err':'ok');
+    } catch(e) { load.style.display='none'; toast('Scan gagal: '+e.message,'err'); }
+    finally {
+      btn.disabled=false;
+      btn.innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Pindai NIK`;
     }
   });
 
   document.getElementById('fNIK').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('btnNIKScan').click();
+    if (e.key==='Enter') document.getElementById('btnNIKScan').click();
   });
 
-  /* ── Init ── */
-  loadData();
+  /* ── PHONE SCAN ── */
+  document.getElementById('btnPhoneScan').addEventListener('click', async () => {
+    const raw = document.getElementById('fPhone2').value.trim();
+    if (!raw) { toast('Masukkan nomor telepon', 'err'); return; }
+
+    const btn   = document.getElementById('btnPhoneScan'),
+          panel = document.getElementById('phonePanel'),
+          load  = document.getElementById('phoneLoad'),
+          res   = document.getElementById('phoneRes');
+
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spin" style="width:12px;height:12px;border-width:1.5px"></div> Memindai…`;
+    panel.style.display = 'block'; load.style.display = 'flex'; res.style.display = 'none';
+    panel.scrollIntoView({ behavior: 'smooth' });
+
+    try {
+      const r = await fetch(`${BASE}/api/phone-scan`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: raw })
+      });
+      const data = await r.json();
+
+      if (!data.valid) {
+        load.style.display = 'none';
+        toast('Nomor tidak valid: ' + data.error, 'err');
+        panel.style.display = 'none';
+        return;
+      }
+
+      const rkCfg = {
+        KRITIS: { cls:'kritis', c:'var(--danger)',  msg:`Nomor terdeteksi di <strong>${data.leakCount} lokasi</strong> — segera ambil tindakan.`, icon:'🚨' },
+        TINGGI: { cls:'tinggi', c:'var(--orange)',  msg:`Nomor ditemukan di <strong>${data.leakCount} lokasi</strong>. Risiko tinggi.`, icon:'⚠️' },
+        SEDANG: { cls:'sedang', c:'var(--warning)', msg:`Nomor muncul di <strong>${data.leakCount} lokasi</strong>. Pantau terus.`, icon:'⚠️' },
+        AMAN:   { cls:'aman',   c:'var(--success)', msg:'Nomor <strong>tidak ditemukan</strong> dalam hasil pencarian publik saat ini.', icon:'✅' },
+      };
+      const rc = rkCfg[data.riskLevel] || rkCfg.AMAN;
+
+      document.getElementById('phoneRiskBadge').innerHTML =
+        `<span class="badge" style="background:${rc.c}1A;color:${rc.c};border:1px solid ${rc.c}44;font-size:11px;padding:3px 12px">⚡ ${data.riskLevel}</span>`;
+      document.getElementById('phoneBanner').className = `risk-banner ${rc.cls}`;
+      document.getElementById('phoneBanner').innerHTML = `<span style="font-size:22px">${rc.icon}</span><span>${rc.msg}</span>`;
+
+      document.getElementById('phoneMeta').innerHTML = [
+        ['Nomor',     data.phone],
+        ['Provider',  data.provider],
+        ['Tipe',      data.type],
+        ['Prefix',    data.prefix],
+        ['Ditemukan', data.leakCount + ' lokasi'],
+        ['Dipindai',  new Date(data.scannedAt).toLocaleString('id-ID')],
+      ].map(([l,v]) => `<div class="nik-cell"><div class="nik-cell-lbl">${l}</div><div class="nik-cell-val">${v}</div></div>`).join('');
+
+      const fw = document.getElementById('phoneFindWrap');
+      if (data.findings?.length) {
+        fw.style.display = 'block';
+
+        const SRC_CONF = {
+          'pastebin.com':    { level:'KRITIS', cls:'c-kritis', cfCls:'cf-kritis', icon:'🔴', desc:'Situs dump data publik' },
+          'github.com':      { level:'TINGGI', cls:'c-tinggi', cfCls:'cf-tinggi', icon:'🟠', desc:'Repository publik terbuka' },
+          'truecaller.com':  { level:'TINGGI', cls:'c-tinggi', cfCls:'cf-tinggi', icon:'🟠', desc:'Database caller ID publik' },
+          'getcontact.com':  { level:'TINGGI', cls:'c-tinggi', cfCls:'cf-tinggi', icon:'🟠', desc:'Platform berbagi kontak' },
+          'default':         { level:'SEDANG', cls:'c-sedang', cfCls:'cf-sedang', icon:'🟡', desc:'Sumber web umum' },
+        };
+        const DORK_CONF = {
+          'filetype:sql': { level:'KRITIS', cls:'c-kritis', cfCls:'cf-kritis', icon:'🔴', desc:'File dump database SQL' },
+          'filetype:csv': { level:'TINGGI', cls:'c-tinggi', cfCls:'cf-tinggi', icon:'🟠', desc:'File data terstruktur CSV' },
+        };
+        const getConf = (f) => {
+          for (const [k, cfg] of Object.entries(DORK_CONF))
+            if (f.query && f.query.includes(k)) return cfg;
+          return SRC_CONF[f.source] || SRC_CONF['default'];
+        };
+
+        const bySource = {};
+        data.findings.forEach(f => {
+          if (!bySource[f.source]) bySource[f.source] = { list:[], conf: getConf(f) };
+          bySource[f.source].list.push(f);
+        });
+
+        const srcCards = Object.entries(bySource).map(([src, {list, conf}]) =>
+          `<div class="src-card ${conf.cls}">
+            <div class="src-card-domain" title="${src}">${src}</div>
+            <div class="src-card-count">${list.length}</div>
+            <span class="confidence-badge ${conf.cfCls}">${conf.icon} ${conf.level}</span>
+            <div class="src-card-desc">${conf.desc}</div>
+          </div>`).join('');
+
+        const findCards = data.findings.map(f => {
+          const conf = getConf(f);
+          const shortQ = f.query && f.query.length > 50 ? f.query.slice(0,50)+'…' : f.query;
+          return `<div class="finding-card">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap">
+              <div class="finding-host">${conf.icon} ${f.source}</div>
+              <span class="confidence-badge ${conf.cfCls}">${conf.level}</span>
+              ${f.query ? `<span class="dork-tag" title="${f.query}">${shortQ}</span>` : ''}
+            </div>
+            <div class="finding-title">${f.title || '(tanpa judul)'}</div>
+            ${f.snippet ? `<div class="finding-snippet">${f.snippet}</div>` : ''}
+            <a class="finding-url" href="${f.url}" target="_blank" rel="noopener">${f.url}</a>
+          </div>`;
+        }).join('');
+
+        document.getElementById('phoneFindings').innerHTML =
+          `<div class="src-section-lbl">Breakdown per Sumber</div>
+           <div class="src-breakdown">${srcCards}</div>
+           <div class="src-section-lbl">Detail Temuan</div>
+           ${findCards}`;
+      } else { fw.style.display = 'none'; }
+
+      load.style.display = 'none'; res.style.display = 'block';
+      toast(data.isLeaked ? `Nomor bocor di ${data.leakCount} lokasi!` : 'Nomor aman — tidak ditemukan',
+            data.isLeaked ? 'err' : 'ok');
+
+    } catch(e) {
+      load.style.display = 'none';
+      toast('Scan gagal: ' + e.message, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Pindai Nomor`;
+    }
+  });
+
+  document.getElementById('fPhone2').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btnPhoneScan').click();
+  });
+
+  /* ── EMAIL SCAN ── */
+  document.getElementById('btnEmailScan').addEventListener('click', async () => {
+    const emailVal = document.getElementById('fEmailScan').value.trim();
+    if (!emailVal) { toast('Masukkan alamat email', 'err'); return; }
+
+    const btn   = document.getElementById('btnEmailScan'),
+          panel = document.getElementById('emailPanel'),
+          load  = document.getElementById('emailLoad'),
+          res   = document.getElementById('emailRes');
+
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spin" style="width:12px;height:12px;border-width:1.5px"></div> Memindai…`;
+    panel.style.display = 'block'; load.style.display = 'flex'; res.style.display = 'none';
+    panel.scrollIntoView({ behavior: 'smooth' });
+
+    try {
+      const r = await fetch(`${BASE}/api/email-scan`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailVal })
+      });
+      const data = await r.json();
+
+      if (!data.valid) {
+        load.style.display = 'none';
+        toast('Email tidak valid: ' + data.error, 'err');
+        panel.style.display = 'none';
+        return;
+      }
+
+      // Risk banner
+      const rkCfg = {
+        KRITIS: { cls:'kritis', c:'var(--danger)',  msg:`Email terekspos di <strong>${data.totalExposure} sumber</strong> — ganti password segera!`, icon:'🚨' },
+        TINGGI: { cls:'tinggi', c:'var(--orange)',  msg:`Email ditemukan di <strong>${data.totalExposure} sumber</strong>. Risiko tinggi kebocoran data.`, icon:'⚠️' },
+        SEDANG: { cls:'sedang', c:'var(--warning)', msg:`Email terdeteksi di <strong>${data.totalExposure} sumber</strong>. Pantau dan perbarui keamanan.`, icon:'⚠️' },
+        AMAN:   { cls:'aman',   c:'var(--success)', msg:'Email <strong>tidak ditemukan</strong> dalam database kebocoran maupun pencarian publik.', icon:'✅' },
+      };
+      const rc = rkCfg[data.riskLevel] || rkCfg.AMAN;
+
+      document.getElementById('emailRiskBadge').innerHTML =
+        `<span class="badge" style="background:${rc.c}1A;color:${rc.c};border:1px solid ${rc.c}44;font-size:11px;padding:3px 12px">⚡ ${data.riskLevel}</span>`;
+      document.getElementById('emailBanner').className  = `risk-banner ${rc.cls}`;
+      document.getElementById('emailBanner').innerHTML  = `<span style="font-size:22px">${rc.icon}</span><span>${rc.msg}</span>`;
+
+      // LeakCheck card
+      const lcColor = data.breachCount > 0 ? 'var(--danger)' : 'var(--success)';
+      document.getElementById('lcCount').style.color = lcColor;
+      document.getElementById('lcCount').textContent = data.breachCount;
+      document.getElementById('lcSources').innerHTML = data.breachSources.length
+        ? data.breachSources.map(s =>
+            `<span class="tag" style="background:rgba(255,59,78,.07);border-color:rgba(255,59,78,.2);color:var(--danger2)">${s}</span>`
+          ).join('')
+        : `<span style="font-size:11px;color:var(--success)">Tidak ada breach</span>`;
+
+      // Dork card
+      const dkColor = data.dorkCount > 0 ? 'var(--orange)' : 'var(--success)';
+      document.getElementById('dorkCount').style.color = dkColor;
+      document.getElementById('dorkCount').textContent = data.dorkCount;
+
+      // Unique sources from dork
+      const dorkSrcs = [...new Set((data.findings || []).map(f => f.source))];
+      document.getElementById('dorkSourceTags').innerHTML = dorkSrcs.length
+        ? dorkSrcs.map(s =>
+            `<span class="tag" style="background:rgba(255,113,40,.07);border-color:rgba(255,113,40,.2);color:var(--orange)">${s}</span>`
+          ).join('')
+        : `<span style="font-size:11px;color:var(--success)">Tidak ditemukan</span>`;
+
+      // Meta info
+      document.getElementById('emailMeta').innerHTML = [
+        ['Email',         data.email],
+        ['Domain',        data.domain],
+        ['Local Part',    data.local],
+        ['Breach (DB)',   data.breachCount + ' database'],
+        ['Eksposur Web',  data.dorkCount + ' halaman'],
+        ['Dipindai',      new Date(data.scannedAt).toLocaleString('id-ID')],
+      ].map(([l,v]) => `<div class="nik-cell"><div class="nik-cell-lbl">${l}</div><div class="nik-cell-val">${v}</div></div>`).join('');
+
+      // Dork findings
+      const fw = document.getElementById('emailFindWrap');
+      if (data.findings?.length) {
+        fw.style.display = 'block';
+
+        const SRC_CONF = {
+          'pastebin.com': { level:'KRITIS', cls:'c-kritis', cfCls:'cf-kritis', icon:'🔴', desc:'Situs dump data publik' },
+          'github.com':   { level:'TINGGI', cls:'c-tinggi', cfCls:'cf-tinggi', icon:'🟠', desc:'Repository publik terbuka' },
+          'scribd.com':   { level:'TINGGI', cls:'c-tinggi', cfCls:'cf-tinggi', icon:'🟠', desc:'Dokumen terpublikasi' },
+          'default':      { level:'SEDANG', cls:'c-sedang', cfCls:'cf-sedang', icon:'🟡', desc:'Sumber web umum' },
+        };
+        const DORK_CONF = {
+          'filetype:sql':  { level:'KRITIS', cls:'c-kritis', cfCls:'cf-kritis', icon:'🔴', desc:'File dump database SQL' },
+          'filetype:csv':  { level:'TINGGI', cls:'c-tinggi', cfCls:'cf-tinggi', icon:'🟠', desc:'File data terstruktur CSV' },
+          '" password"':   { level:'KRITIS', cls:'c-kritis', cfCls:'cf-kritis', icon:'🔴', desc:'Password ditemukan bersama email' },
+          '"leaked"':      { level:'KRITIS', cls:'c-kritis', cfCls:'cf-kritis', icon:'🔴', desc:'Terindikasi data bocor' },
+        };
+        const getConf = (f) => {
+          for (const [k, cfg] of Object.entries(DORK_CONF))
+            if (f.query && f.query.includes(k)) return cfg;
+          return SRC_CONF[f.source] || SRC_CONF['default'];
+        };
+
+        const bySource = {};
+        data.findings.forEach(f => {
+          if (!bySource[f.source]) bySource[f.source] = { list:[], conf: getConf(f) };
+          bySource[f.source].list.push(f);
+        });
+
+        const srcCards = Object.entries(bySource).map(([src, {list, conf}]) =>
+          `<div class="src-card ${conf.cls}">
+            <div class="src-card-domain" title="${src}">${src}</div>
+            <div class="src-card-count">${list.length}</div>
+            <span class="confidence-badge ${conf.cfCls}">${conf.icon} ${conf.level}</span>
+            <div class="src-card-desc">${conf.desc}</div>
+          </div>`).join('');
+
+        const findCards = data.findings.map(f => {
+          const conf   = getConf(f);
+          const shortQ = f.query && f.query.length > 50 ? f.query.slice(0,50)+'…' : f.query;
+          return `<div class="finding-card">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap">
+              <div class="finding-host">${conf.icon} ${f.source}</div>
+              <span class="confidence-badge ${conf.cfCls}">${conf.level}</span>
+              ${f.query ? `<span class="dork-tag" title="${f.query}">${shortQ}</span>` : ''}
+            </div>
+            <div class="finding-title">${f.title || '(tanpa judul)'}</div>
+            ${f.snippet ? `<div class="finding-snippet">${f.snippet}</div>` : ''}
+            <a class="finding-url" href="${f.url}" target="_blank" rel="noopener">${f.url}</a>
+          </div>`;
+        }).join('');
+
+        document.getElementById('emailFindings').innerHTML =
+          `<div class="src-section-lbl">Breakdown per Sumber</div>
+           <div class="src-breakdown">${srcCards}</div>
+           <div class="src-section-lbl">Detail Temuan</div>
+           ${findCards}`;
+      } else { fw.style.display = 'none'; }
+
+      load.style.display = 'none'; res.style.display = 'block';
+      const msg = data.isLeaked
+        ? `Email bocor: ${data.breachCount} breach + ${data.dorkCount} halaman publik`
+        : 'Email aman — tidak ditemukan di manapun';
+      toast(msg, data.isLeaked ? 'err' : 'ok');
+
+    } catch(e) {
+      load.style.display = 'none';
+      toast('Scan gagal: ' + e.message, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Pindai Email`;
+    }
+  });
+
+  document.getElementById('fEmailScan').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btnEmailScan').click();
+  });
+
+  /* ── LAPORAN ── */
+  function buildLaporan() {
+    const total   = histRows.length;
+    const bocor   = histRows.filter(r => r.riskLevel !== 'AMAN').length;
+    const aman    = histRows.filter(r => r.riskLevel === 'AMAN').length;
+    const kritis  = histRows.filter(r => r.riskLevel === 'KRITIS').length;
+    const tinggi  = histRows.filter(r => r.riskLevel === 'TINGGI').length;
+    const sedang  = histRows.filter(r => r.riskLevel === 'SEDANG').length;
+    const rate    = total > 0 ? ((bocor/total)*100).toFixed(1) : 0;
+    const nikC    = histRows.filter(r=>r.type==='NIK').length;
+    const phoneC  = histRows.filter(r=>r.type==='PHONE').length;
+    const emailC  = histRows.filter(r=>r.type==='EMAIL').length;
+
+    // Subtitle + print date
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('lapSubtitle').textContent = `Diperbarui ${dateStr} · ${total} total scan`;
+    document.getElementById('printDate').textContent   = dateStr;
+
+    // KPI
+    document.getElementById('kpiTotal').textContent  = total;
+    document.getElementById('kpiBocor').textContent  = bocor;
+    document.getElementById('kpiAman').textContent   = aman;
+    document.getElementById('kpiKritis').textContent = kritis;
+    document.getElementById('kpiRate').textContent   = rate + '%';
+
+    // ── Ring chart (SVG) ──
+    const ringWrap = document.getElementById('ringWrap');
+    if (!total) {
+      ringWrap.innerHTML = `<div class="empty" style="padding:20px 10px"><div class="ei" style="font-size:26px">📊</div><p style="font-size:12px">Belum ada data</p></div>`;
+    } else {
+      const R = 42, C = 2*Math.PI*R;
+      const segments = [
+        { label:'Kritis', val: kritis, color:'var(--danger)' },
+        { label:'Tinggi', val: tinggi, color:'var(--orange)' },
+        { label:'Sedang', val: sedang, color:'var(--warning)' },
+        { label:'Aman',   val: aman,   color:'var(--success)' },
+      ].filter(s => s.val > 0);
+      let offset = 0;
+      const paths = segments.map(s => {
+        const pct = s.val / total;
+        const dash = `${(pct * C).toFixed(2)} ${((1-pct)*C).toFixed(2)}`;
+        const el = `<circle r="${R}" cx="50" cy="50" fill="none" stroke="${s.color}" stroke-width="11" stroke-dasharray="${dash}" stroke-dashoffset="${-offset*C}" stroke-linecap="butt"/>`;
+        offset += pct;
+        return el;
+      }).join('');
+      const bocorPct = total > 0 ? ((bocor/total)*100).toFixed(0) : 0;
+      ringWrap.innerHTML = `
+        <div class="ring">
+          <svg viewBox="0 0 100 100"><circle r="${R}" cx="50" cy="50" fill="none" stroke="var(--surface3)" stroke-width="11"/>${paths}</svg>
+          <div class="ring-center"><div class="ring-pct" style="color:${bocor>0?'var(--danger)':'var(--success)'}">${bocorPct}%</div><div class="ring-lbl">Bocor</div></div>
+        </div>
+        <div class="ring-legend">
+          ${[['Kritis',kritis,'var(--danger)'],['Tinggi',tinggi,'var(--orange)'],['Sedang',sedang,'var(--warning)'],['Aman',aman,'var(--success)']].map(([l,v,c])=>
+            `<div class="rl-item"><div class="rl-dot" style="background:${c}"></div><span class="rl-name">${l}</span><span class="rl-n" style="color:${c}">${v}</span></div>`
+          ).join('')}
+        </div>`;
+    }
+
+    // ── Type breakdown bars ──
+    const typeBarsEl = document.getElementById('typeBars');
+    if (!total) {
+      typeBarsEl.innerHTML = `<div class="empty" style="padding:10px"><p style="font-size:12px">Belum ada data</p></div>`;
+    } else {
+      const mx = Math.max(nikC, phoneC, emailC, 1);
+      const typeData = [
+        { name:'NIK / KTP', val: nikC,   color:'var(--purple)',  icon:'🪪' },
+        { name:'No. Telepon',val: phoneC, color:'var(--accent2)', icon:'📱' },
+        { name:'Email',      val: emailC, color:'var(--success)',  icon:'📧' },
+      ];
+      typeBarsEl.innerHTML = typeData.map(t => `
+        <div class="tb-item">
+          <div class="tb-top">
+            <div class="tb-name"><span>${t.icon}</span>${t.name}</div>
+            <div class="tb-count" style="color:${t.color}">${t.val}</div>
+          </div>
+          <div class="tb-track"><div class="tb-fill" style="width:${(t.val/mx*100).toFixed(0)}%;background:${t.color}"></div></div>
+        </div>`).join('');
+    }
+
+    // ── Activity sparkline — last 7 days ──
+    const sparkEl = document.getElementById('sparkWrap');
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+      days.push(d);
+    }
+    const dayData = days.map(d => {
+      const next = new Date(d); next.setDate(next.getDate()+1);
+      const scans = histRows.filter(r => { const t=new Date(r.scannedAt); return t>=d && t<next; });
+      return { label: d.toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit'}), total: scans.length, leaked: scans.filter(r=>r.riskLevel!=='AMAN').length };
+    });
+    const maxDay = Math.max(...dayData.map(d=>d.total), 1);
+    sparkEl.innerHTML = `
+      <div class="sparkline-title">Frekuensi Scan Harian</div>
+      <div class="spark-bars">
+        ${dayData.map(d=>`<div class="spark-bar ${d.leaked>0?'has-leak':''}" style="height:${Math.max((d.total/maxDay)*100,d.total>0?8:3)}%" title="${d.label}: ${d.total} scan, ${d.leaked} bocor"></div>`).join('')}
+      </div>
+      <div class="spark-labels">${dayData.map(d=>`<div class="spark-lbl">${d.label}</div>`).join('')}</div>`;
+
+    // ── Source bar chart ──
+    const allSrc = histRows.flatMap(r => (r.findings||[]).map(f=>f.source).filter(Boolean));
+    const cnt = {}; allSrc.forEach(s => { cnt[s]=(cnt[s]||0)+1; });
+    const top = Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const srcEl = document.getElementById('srcChart');
+    document.getElementById('srcTotal').textContent = top.length ? `${allSrc.length} temuan total` : '';
+    if (!top.length) {
+      srcEl.innerHTML = `<div class="empty"><div class="ei">📡</div><p>Belum ada sumber bocor</p></div>`;
+    } else {
+      const mx2=top[0][1];
+      const clrs=['var(--danger)','var(--orange)','var(--warning)','var(--accent)','var(--purple)','var(--success)','var(--accent2)','var(--danger2)'];
+      srcEl.innerHTML = top.map(([s,v],i)=>
+        `<div class="src-bar-item">
+          <div class="src-bar-lbl" title="${s}">${s}</div>
+          <div class="src-bar-track"><div class="src-bar-fill" style="width:${(v/mx2*100).toFixed(0)}%;background:${clrs[i%8]}"></div></div>
+          <div class="src-bar-val" style="color:${clrs[i%8]}">${v}</div>
+        </div>`).join('');
+    }
+
+    // ── Breach source tags (from email scans) ──
+    const allBreachSrc = histRows.flatMap(r => r.breachSources||[]);
+    const bCnt = {}; allBreachSrc.forEach(s => { bCnt[s]=(bCnt[s]||0)+1; });
+    const bTop = Object.entries(bCnt).sort((a,b)=>b[1]-a[1]).slice(0,20);
+    const breachEl = document.getElementById('breachCloud');
+    if (!bTop.length) {
+      breachEl.innerHTML = `<div class="empty" style="padding:16px 0;width:100%"><p style="font-size:12px">Belum ada data breach email</p></div>`;
+    } else {
+      const bMax = bTop[0][1];
+      const palettes = ['rgba(255,59,78,.15)','rgba(255,113,40,.15)','rgba(255,170,0,.15)','rgba(139,92,246,.15)','rgba(61,114,255,.15)'];
+      const borderP  = ['rgba(255,59,78,.4)','rgba(255,113,40,.4)','rgba(255,170,0,.4)','rgba(139,92,246,.4)','rgba(61,114,255,.4)'];
+      const textP    = ['var(--danger)','var(--orange)','var(--warning)','var(--purple)','var(--accent2)'];
+      breachEl.innerHTML = bTop.map(([s,v],i)=>{
+        const sz = 0.85 + (v/bMax)*0.35;
+        const pi = i%5;
+        return `<span class="btag" style="background:${palettes[pi]};border-color:${borderP[pi]};color:${textP[pi]};font-size:${(10.5*sz).toFixed(1)}px">${s}<sup style="font-size:8px;margin-left:3px;opacity:.7">${v}</sup></span>`;
+      }).join('');
+    }
+
+    // ── Recent leaked table ──
+    const leaked = histRows.filter(r=>r.riskLevel!=='AMAN').sort((a,b)=>new Date(b.scannedAt)-new Date(a.scannedAt)).slice(0,8);
+    const typeIco = { NIK:'🪪', PHONE:'📱', EMAIL:'📧' };
+    const riskColor = { KRITIS:'var(--danger)',TINGGI:'var(--orange)',SEDANG:'var(--warning)' };
+    const rftEl = document.getElementById('rftBody');
+    if (!leaked.length) {
+      rftEl.innerHTML = `<tr><td colspan="5"><div class="empty" style="padding:16px"><p style="font-size:12px">Tidak ada target berisiko</p></div></td></tr>`;
+    } else {
+      rftEl.innerHTML = leaked.map(r=>`
+        <tr>
+          <td><span style="font-size:16px">${typeIco[r.type]||'?'}</span></td>
+          <td class="mono" style="font-size:12px">${r.target}</td>
+          <td><span class="badge" style="background:${riskColor[r.riskLevel]}1A;color:${riskColor[r.riskLevel]};border:1px solid ${riskColor[r.riskLevel]}44;font-size:10px">${r.riskLevel}</span></td>
+          <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${r.leakCount||0}</td>
+          <td style="font-size:11px;color:var(--muted)">${timeAgo(r.scannedAt)}</td>
+        </tr>`).join('');
+    }
+
+    // ── Insight cards ──
+    const topSrc = top[0]?.[0] || null;
+    const insights = [
+      { icon:'🛡️', bg: bocor>0?'rgba(255,59,78,.1)':'rgba(24,201,126,.1)',
+        title: bocor>0 ? `${rate}% Data Terekspos` : 'Semua Data Aman',
+        desc:  bocor>0 ? `${bocor} dari ${total} scan menunjukkan risiko. ${kritis} berstatus KRITIS dan perlu tindakan segera.` : `Seluruh ${total} data yang dipindai tidak ditemukan dalam sumber kebocoran publik.`,
+        badge: bocor>0 ? {txt:'Perlu Tindakan',bg:'rgba(255,59,78,.1)',c:'var(--danger)'} : {txt:'Aman',bg:'rgba(24,201,126,.1)',c:'var(--success)'} },
+      { icon:'📊', bg:'rgba(61,114,255,.1)',
+        title: 'Distribusi Tipe Scan',
+        desc:  `NIK: ${nikC} · Telepon: ${phoneC} · Email: ${emailC}. ${emailC>0?`Email scan mendeteksi ${histRows.filter(r=>r.type==='EMAIL'&&r.breachCount>0).length} breach dari database.`:''}`,
+        badge: {txt:`${total} Total`,bg:'rgba(61,114,255,.1)',c:'var(--accent2)'} },
+      { icon: topSrc?'🔍':'📭', bg:'rgba(255,170,0,.1)',
+        title: topSrc ? `Sumber Dominan: ${topSrc}` : 'Belum Ada Sumber Teridentifikasi',
+        desc:  topSrc ? `${topSrc} menjadi domain paling sering ditemukan (${top[0][1]}x). Perlu pemantauan khusus terhadap data yang terekspos di sumber ini.` : 'Lakukan scan untuk mengidentifikasi platform mana yang paling banyak mengekspos data.',
+        badge: topSrc ? {txt:`${allSrc.length} Temuan`,bg:'rgba(255,170,0,.1)',c:'var(--warning)'} : {txt:'Kosong',bg:'rgba(78,100,136,.1)',c:'var(--muted)'} },
+    ];
+    document.getElementById('insightList').innerHTML = insights.map(ins=>`
+      <div class="ic">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="ic-icon" style="background:${ins.bg}">${ins.icon}</div>
+          <div class="ic-title">${ins.title}</div>
+        </div>
+        <div class="ic-desc">${ins.desc}</div>
+        <span class="ic-badge" style="background:${ins.badge.bg};color:${ins.badge.c};border:1px solid ${ins.badge.c}33">${ins.badge.txt}</span>
+      </div>`).join('');
+  }
+
+  document.getElementById('btnRefreshInsight').addEventListener('click', async () => {
+    await loadHistory(); buildLaporan();
+  });
+
+  // PDF download
+  document.getElementById('btnPDF').addEventListener('click', () => {
+    document.getElementById('printDate').textContent =
+      new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    window.print();
+  });
+
+  /* ── SCAN ACTION BUTTONS ── */
+
+  // NIK actions
+  document.getElementById('nikBtnRescan').addEventListener('click', () => {
+    document.getElementById('btnNIKScan').click();
+  });
+  document.getElementById('nikBtnNew').addEventListener('click', () => {
+    document.getElementById('fNIK').value = '';
+    document.getElementById('nikPanel').style.display = 'none';
+    document.getElementById('fNIK').focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  document.getElementById('nikBtnHistory').addEventListener('click', () => {
+    navigate('monitor');
+  });
+
+  // Phone actions
+  document.getElementById('phoneBtnRescan').addEventListener('click', () => {
+    document.getElementById('btnPhoneScan').click();
+  });
+  document.getElementById('phoneBtnNew').addEventListener('click', () => {
+    document.getElementById('fPhone2').value = '';
+    document.getElementById('phonePanel').style.display = 'none';
+    document.getElementById('fPhone2').focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  document.getElementById('phoneBtnHistory').addEventListener('click', () => {
+    navigate('monitor');
+  });
+
+  // Email actions
+  document.getElementById('emailBtnRescan').addEventListener('click', () => {
+    document.getElementById('btnEmailScan').click();
+  });
+  document.getElementById('emailBtnNew').addEventListener('click', () => {
+    document.getElementById('fEmailScan').value = '';
+    document.getElementById('emailPanel').style.display = 'none';
+    document.getElementById('fEmailScan').focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  document.getElementById('emailBtnHistory').addEventListener('click', () => {
+    navigate('monitor');
+  });
+
+  /* ── INIT ── */
+  loadHistory();
   connectSSE();
 </script>
 </body>

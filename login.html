@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecureWatch · Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root, [data-theme="dark"] {
+      --bg:       #070912;
+      --surface:  #0D1220;
+      --surface2: #131B2E;
+      --border:   #1F2E48;
+      --border2:  #2A3D5E;
+      --text:     #E4ECF8;
+      --text2:    #8EA4C8;
+      --muted:    #4E6488;
+      --accent:   #3D72FF;
+      --accent2:  #6990FF;
+      --danger:   #FF3B4E;
+      --success:  #18C97E;
+      --purple:   #8B5CF6;
+    }
+    [data-theme="light"] {
+      --bg:       #ECEEF6;
+      --surface:  #FFFFFF;
+      --surface2: #F3F5FB;
+      --border:   #D5DCF0;
+      --border2:  #C4CEEA;
+      --text:     #0C1428;
+      --text2:    #3A4F72;
+      --muted:    #7A8FAE;
+      --accent:   #2A5FFF;
+      --accent2:  #4E7AFF;
+      --danger:   #E8202F;
+      --success:  #0FAD6A;
+      --purple:   #7240E8;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Sora', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      transition: background .28s, color .28s;
+    }
+
+    /* Background glow */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 50% at 20% 20%, rgba(61,114,255,.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 60% at 80% 80%, rgba(139,92,246,.09) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(61,114,255,.04) 0%, transparent 70%);
+    }
+
+    /* Grid pattern overlay */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(61,114,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(61,114,255,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    /* Theme toggle */
+    .theme-btn {
+      position: fixed; top: 18px; right: 18px; z-index: 100;
+      width: 34px; height: 34px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text2); transition: all .16s;
+    }
+    .theme-btn:hover { background: var(--surface2); border-color: var(--border2); color: var(--text); }
+
+    /* Login card */
+    .login-wrap {
+      position: relative; z-index: 10;
+      width: 100%; max-width: 420px;
+      padding: 16px;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 40px 36px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(61,114,255,.06);
+      position: relative; overflow: hidden;
+    }
+
+    .login-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--purple), var(--accent2));
+    }
+
+    /* Brand */
+    .brand {
+      display: flex; flex-direction: column; align-items: center;
+      margin-bottom: 32px; text-align: center;
+    }
+
+    .brand-logo {
+      width: 56px; height: 56px;
+      background: linear-gradient(140deg, var(--accent) 0%, var(--purple) 100%);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 28px rgba(61,114,255,.45);
+      margin-bottom: 16px;
+    }
+
+    .brand-name {
+      font-size: 22px; font-weight: 800; letter-spacing: -.6px;
+      background: linear-gradient(135deg, var(--text), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand-sub {
+      font-size: 11px; color: var(--muted); letter-spacing: 1.2px;
+      text-transform: uppercase; margin-top: 4px; font-weight: 500;
+    }
+
+    /* Form */
+    .form-title {
+      font-size: 14px; font-weight: 700; color: var(--text2);
+      text-align: center; margin-bottom: 24px; letter-spacing: -.1px;
+    }
+
+    .fg { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+
+    .fg label {
+      font-size: 10.5px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .7px;
+    }
+
+    .input-wrap { position: relative; }
+
+    .input-ico {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); pointer-events: none;
+      display: flex; align-items: center;
+    }
+
+    .fg input {
+      width: 100%;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 11px 12px 11px 38px;
+      color: var(--text); font-family: 'Sora', sans-serif; font-size: 13.5px;
+      outline: none; transition: border-color .16s, box-shadow .16s;
+    }
+    .fg input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(61,114,255,.16); }
+    .fg input::placeholder { color: var(--muted); }
+
+    .fg input[type="password"] { font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; }
+    .fg input[type="password"]::placeholder { font-family: 'Sora', sans-serif; letter-spacing: normal; }
+
+    /* Show/hide password toggle */
+    .pw-toggle {
+      position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+      cursor: pointer; color: var(--muted); background: none; border: none;
+      padding: 2px; display: flex; align-items: center; transition: color .16s;
+    }
+    .pw-toggle:hover { color: var(--text2); }
+
+    /* Error */
+    .err-box {
+      background: rgba(255,59,78,.08);
+      border: 1px solid rgba(255,59,78,.25);
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 12.5px; color: var(--danger);
+      display: none; margin-bottom: 16px;
+      align-items: center; gap: 8px;
+    }
+    .err-box.show { display: flex; }
+
+    /* Submit button */
+    .btn-login {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      color: #fff; border: none; border-radius: 8px;
+      padding: 13px; font-family: 'Sora', sans-serif;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: all .18s; letter-spacing: .1px;
+      box-shadow: 0 4px 18px rgba(61,114,255,.4);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 8px;
+    }
+    .btn-login:hover:not(:disabled) {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(61,114,255,.5);
+    }
+    .btn-login:active:not(:disabled) { transform: translateY(0); }
+    .btn-login:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* Spin */
+    .spin {
+      width: 15px; height: 15px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+      animation: sp .7s linear infinite;
+    }
+    @keyframes sp { to { transform: rotate(360deg); } }
+
+    /* Footer hint */
+    .login-hint {
+      margin-top: 28px; text-align: center;
+      font-size: 11px; color: var(--muted); line-height: 1.7;
+    }
+    .login-hint code {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 1px 6px; border-radius: 4px; color: var(--text2); font-size: 11px;
+    }
+
+    /* Security badges */
+    .sec-badges {
+      display: flex; justify-content: center; gap: 12px;
+      margin-top: 20px; flex-wrap: wrap;
+    }
+    .sec-badge {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 10px; color: var(--muted); font-weight: 500;
+    }
+    .sec-badge svg { opacity: .5; }
+  </style>
+</head>
+<body>
+
+<button class="theme-btn" id="themeBtn" title="Ganti tema">
+  <svg id="iMoon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+  <svg id="iSun"  width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+</button>
+
+<div class="login-wrap">
+  <div class="login-card">
+
+    <div class="brand">
+      <div class="brand-logo">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7L12 2z" fill="rgba(255,255,255,.92)"/>
+          <path d="M9 12l2 2 4-4" stroke="#0D1220" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="brand-name">SecureWatch</div>
+      <div class="brand-sub">Data Leak Intelligence</div>
+    </div>
+
+    <div class="form-title">Masuk ke sistem pemantauan</div>
+
+    <div class="err-box" id="errBox">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="errMsg">Email atau password salah</span>
+    </div>
+
+    <form id="loginForm" autocomplete="on">
+      <div class="fg">
+        <label>Email</label>
+        <div class="input-wrap">
+          <span class="input-ico">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </span>
+          <input type="email" id="fEmail" placeholder="admin@securewatch.id"
+                 autocomplete="email" required>
+        </div>
+      </div>
+
+      <div class="fg">
+        <label>Password</label>
+        <div class="input-wrap">
+          <span class="input-ico">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </span>
+          <input type="password" id="fPassword" placeholder="Password"
+                 autocomplete="current-password" required>
+          <button type="button" class="pw-toggle" id="pwToggle" tabindex="-1">
+            <svg id="eyeOpen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="eyeClose" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login" id="btnLogin">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Masuk
+      </button>
+    </form>
+
+    <div class="login-hint">
+      Akun default: <code>admin@securewatch.id</code><br>
+      Password: <code>SecureWatch@2024</code>
+    </div>
+
+    <div class="sec-badges">
+      <div class="sec-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        JWT Secured
+      </div>
+      <div class="sec-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        bcrypt Hashed
+      </div>
+      <div class="sec-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        MongoDB Atlas
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const BASE = 'http://localhost:5000';
+
+  // Jika sudah login, langsung redirect ke dashboard
+  (async () => {
+    const token = localStorage.getItem('sw-token');
+    if (!token) return;
+    try {
+      const r = await fetch(`${BASE}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (r.ok) window.location.replace('/');
+    } catch {}
+  })();
+
+  // Theme
+  const html = document.documentElement;
+  let dark = localStorage.getItem('sw-theme') !== 'light';
+  function applyTheme() {
+    html.dataset.theme = dark ? 'dark' : 'light';
+    document.getElementById('iMoon').style.display = dark ? '' : 'none';
+    document.getElementById('iSun').style.display  = dark ? 'none' : '';
+  }
+  document.getElementById('themeBtn').onclick = () => {
+    dark = !dark; localStorage.setItem('sw-theme', dark ? 'dark' : 'light'); applyTheme();
+  };
+  applyTheme();
+
+  // Show/hide password
+  document.getElementById('pwToggle').onclick = () => {
+    const inp = document.getElementById('fPassword');
+    const isPass = inp.type === 'password';
+    inp.type = isPass ? 'text' : 'password';
+    document.getElementById('eyeOpen').style.display  = isPass ? 'none' : '';
+    document.getElementById('eyeClose').style.display = isPass ? '' : 'none';
+  };
+
+  // Login form
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email    = document.getElementById('fEmail').value.trim();
+    const password = document.getElementById('fPassword').value;
+    const btn      = document.getElementById('btnLogin');
+    const errBox   = document.getElementById('errBox');
+    const errMsg   = document.getElementById('errMsg');
+
+    errBox.classList.remove('show');
+    btn.disabled = true;
+    btn.innerHTML = `<div class="spin"></div> Memverifikasi…`;
+
+    try {
+      const r = await fetch(`${BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await r.json();
+
+      if (!r.ok) {
+        errMsg.textContent = data.error || 'Login gagal';
+        errBox.classList.add('show');
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Masuk`;
+        return;
+      }
+
+      localStorage.setItem('sw-token', data.token);
+      localStorage.setItem('sw-user',  JSON.stringify(data.user));
+
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Berhasil!`;
+      setTimeout(() => window.location.replace('/'), 600);
+
+    } catch (err) {
+      errMsg.textContent = 'Tidak dapat terhubung ke server';
+      errBox.classList.add('show');
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Masuk`;
+    }
+  });
+</script>
+</body>
+</html>

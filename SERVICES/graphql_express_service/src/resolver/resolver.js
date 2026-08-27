@@ -245,6 +245,26 @@ const resolvers = {
     return true;
   },
 
+  // Hapus satu leakItem berdasarkan phone dari user tertentu
+  deleteLeakItem: async ({ userEmail, phone }) => {
+    const doc = await usersSchema.findOne({ "users.leakEmailUser": userEmail });
+    if (!doc) return false;
+
+    const userIndex = doc.users.findIndex((u) => u.leakEmailUser === userEmail);
+    if (userIndex === -1) return false;
+
+    const before = doc.users[userIndex].leakItems.length;
+    doc.users[userIndex].leakItems = doc.users[userIndex].leakItems.filter(
+      (item) => Object.keys(item)[0] !== phone
+    );
+
+    if (doc.users[userIndex].leakItems.length === before) return false;
+
+    doc.markModified("users");
+    await doc.save();
+    return true;
+  },
+
   scanedEmail: async ({ phone }) => {
     const doc = await usersSchema.find({
       [phone]: { $exists: true },

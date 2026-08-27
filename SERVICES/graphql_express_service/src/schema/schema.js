@@ -49,6 +49,7 @@ type Mutation {
   addLeakItem(userEmail: String!, phone: String! email: String!): Email
   updateStatus(phone: String!, status: Boolean!): User
   deleteUser(phone: String!): Boolean
+  deleteLeakItem(userEmail: String!, phone: String!): Boolean
   updateLeakStatus(
     userEmail: String!,
     phone: [String!]
