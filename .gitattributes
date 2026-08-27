@@ -1,0 +1,2 @@
+# Skrip shell wajib LF walaupun dikerjakan di Windows, supaya tidak rusak saat dijalankan di VPS Linux
+*.sh text eol=lf
