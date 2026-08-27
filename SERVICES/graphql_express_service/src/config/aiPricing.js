@@ -43,8 +43,9 @@ const setAiBudget = async (value) => {
   return Number(doc.value);
 };
 
-// % terpakai override manual — murni simulasi, tidak memengaruhi angka Rp
-// terpakai/sisa (yang tetap dihitung dari token riil). null = pakai hitungan otomatis.
+// % terpakai override manual — simulasi. Saat aktif, Rp terpakai & sisa
+// anggaran ikut dihitung dari persentase ini (bukan dari token riil).
+// null = pakai hitungan otomatis dari token yang benar-benar terpakai.
 const getPercentOverride = async () => {
   const doc = await AppSettings.findOne({ key: PERCENT_KEY }).lean();
   return doc ? Number(doc.value) : null;

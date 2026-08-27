@@ -129,16 +129,22 @@ app.get("/api/ai-usage", async (req, res) => {
     ]);
     const recent = await AiUsageLog.find().sort({ createdAt: -1 }).limit(20).lean();
 
-    const used          = byModel.reduce((s, m) => s + m.cost, 0);
+    const actualUsed    = byModel.reduce((s, m) => s + m.cost, 0);
     const totalRequests = byModel.reduce((s, m) => s + m.requests, 0);
     const totalTokens   = byModel.reduce((s, m) => s + m.tokens, 0);
-    const computedPercent = budget > 0 ? Math.min((used / budget) * 100, 100) : 0;
+    const computedPercent = budget > 0 ? Math.min((actualUsed / budget) * 100, 100) : 0;
+
+    // Kalau ada override % manual, Rp terpakai & sisa anggaran ikut dihitung
+    // dari persentase itu (bukan lagi statis) — supaya simulasi konsisten.
+    const percentUsed = percentOverride !== null ? percentOverride : computedPercent;
+    const used         = percentOverride !== null ? Math.round((percentOverride / 100) * budget) : actualUsed;
 
     res.json({
       budget,
       used,
+      actualUsed, // Rp riil dari token yang benar-benar terpakai (referensi, tidak terpengaruh override)
       remaining:       Math.max(budget - used, 0),
-      percentUsed:     percentOverride !== null ? percentOverride : computedPercent,
+      percentUsed,
       percentOverride, // null jika belum ada override manual (simulasi)
       totalRequests,
       totalTokens,
@@ -152,7 +158,7 @@ app.get("/api/ai-usage", async (req, res) => {
   }
 });
 
-// ── PENGATURAN: CRUD SIMULASI % TERPAKAI (override manual, tidak memengaruhi angka Rp) ──
+// ── PENGATURAN: CRUD SIMULASI % TERPAKAI (override manual — Rp terpakai & sisa anggaran ikut dihitung dari % ini) ──
 app.put("/api/settings/ai-usage-percent", requireAuth, async (req, res) => {
   try {
     const value = Number(req.body.percent);
