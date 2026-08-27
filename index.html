@@ -1319,7 +1319,6 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
             Anggaran Penggunaan Model AI
           </div>
-          <span style="font-size:11px;color:var(--muted)" id="pgNote">Estimasi simulasi, bukan tagihan riil</span>
         </div>
         <div style="padding:22px 24px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px;margin-bottom:12px">
@@ -2322,7 +2321,6 @@
       data.percentUsed >= 90 ? 'var(--danger)' : data.percentUsed >= 60 ? 'var(--orange)' : 'var(--accent)';
     document.getElementById('pgPercent').textContent   = `${(data.percentUsed || 0).toFixed(1)}% terpakai`;
     document.getElementById('pgReqCount').textContent  = `${data.totalRequests || 0} request · ${(data.totalTokens || 0).toLocaleString('id-ID')} token`;
-    if (data.note) document.getElementById('pgNote').textContent = data.note;
     if (document.activeElement?.id !== 'pgBudgetInput') {
       document.getElementById('pgBudgetInput').value = data.budget;
     }
