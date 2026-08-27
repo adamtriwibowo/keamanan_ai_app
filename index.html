@@ -1300,10 +1300,16 @@
           <div class="lap-title">Pengaturan</div>
           <div class="lap-subtitle">Dashboard penggunaan model AI</div>
         </div>
-        <button class="btn btn-ghost" id="btnRefreshUsage">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-          Perbarui
-        </button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" id="btnToggleCrud">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" id="pgEyeIcon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span id="pgToggleLabel">Tampilkan Kontrol</span>
+          </button>
+          <button class="btn btn-ghost" id="btnRefreshUsage">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Perbarui
+          </button>
+        </div>
       </div>
 
       <!-- Budget summary -->
@@ -1333,7 +1339,7 @@
             <span id="pgPercent">0% terpakai</span>
             <span id="pgReqCount">0 request · 0 token</span>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap">
+          <div id="pgBudgetEditRow" style="display:none;gap:8px;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap">
             <div class="fg" style="flex:0 0 220px;gap:5px">
               <label>Ubah Total Anggaran (Rp)</label>
               <input id="pgBudgetInput" type="number" min="0" step="1000" placeholder="4000000">
@@ -1354,11 +1360,11 @@
         </div>
         <div style="overflow-x:auto">
           <table class="rft">
-            <thead><tr><th>Model</th><th>Request</th><th>Token</th><th>Biaya Terpakai</th><th>Tarif Prompt</th><th>Tarif Completion</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>Model</th><th>Request</th><th>Token</th><th>Biaya Terpakai</th><th>Tarif Prompt</th><th>Tarif Completion</th><th id="pgModelActionsTh"></th></tr></thead>
             <tbody id="pgModelBody"><tr><td colspan="7"><div class="empty" style="padding:16px"><p style="font-size:12px">Memuat data…</p></div></td></tr></tbody>
           </table>
         </div>
-        <div class="form-grid" style="grid-template-columns:1.4fr 1fr 1fr auto">
+        <div id="pgAddModelForm" class="form-grid" style="display:none;grid-template-columns:1.4fr 1fr 1fr auto">
           <div class="fg">
             <label>Model Baru</label>
             <input id="pgNewModel" type="text" placeholder="mis. openai/gpt-4o-mini">
@@ -1382,11 +1388,11 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             Riwayat Pemanggilan AI Terbaru
           </div>
-          <button class="btn btn-ghost" id="btnClearUsageLog" style="font-size:11px;padding:5px 10px">Hapus Semua</button>
+          <button class="btn btn-ghost" id="btnClearUsageLog" style="display:none;font-size:11px;padding:5px 10px">Hapus Semua</button>
         </div>
         <div style="overflow-x:auto">
           <table class="rft">
-            <thead><tr><th>Waktu</th><th>Model</th><th>Token</th><th>Estimasi Biaya</th><th>Aksi</th></tr></thead>
+            <thead><tr><th>Waktu</th><th>Model</th><th>Token</th><th>Estimasi Biaya</th><th id="pgLogActionsTh"></th></tr></thead>
             <tbody id="pgLogBody"><tr><td colspan="5"><div class="empty" style="padding:16px"><p style="font-size:12px">Belum ada data</p></div></td></tr></tbody>
           </table>
         </div>
@@ -2252,40 +2258,61 @@
     }));
   }
 
-  function renderModelRow(row) {
+  function renderModelRow(row, editMode) {
     const id      = row.pricing ? row.pricing._id : '';
     const promptV = row.pricing ? row.pricing.promptRate : '';
     const compV   = row.pricing ? row.pricing.completionRate : '';
     const inputCss = 'width:90px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:12px';
+
+    const promptCell = editMode
+      ? `<input type="number" min="0" step="1" class="pg-rate-prompt" value="${promptV}" placeholder="10" style="${inputCss}">`
+      : `<span>${promptV !== '' ? promptV : '—'}</span>`;
+    const compCell = editMode
+      ? `<input type="number" min="0" step="1" class="pg-rate-completion" value="${compV}" placeholder="30" style="${inputCss}">`
+      : `<span>${compV !== '' ? compV : '—'}</span>`;
+    const actionCell = editMode
+      ? `<button class="btn btn-ghost pg-save-model" style="font-size:10.5px;padding:4px 9px">Simpan</button>
+         ${id ? `<button class="btn btn-ghost pg-del-model" style="font-size:10.5px;padding:4px 9px;color:var(--danger)">Hapus</button>` : ''}`
+      : '';
+
     return `
       <tr data-model="${row.model}" data-id="${id}">
         <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${row.model}</td>
         <td>${row.usage.requests}</td>
         <td>${(row.usage.tokens || 0).toLocaleString('id-ID')}</td>
         <td>${fmtRupiah(row.usage.cost)}</td>
-        <td><input type="number" min="0" step="1" class="pg-rate-prompt" value="${promptV}" placeholder="10" style="${inputCss}"></td>
-        <td><input type="number" min="0" step="1" class="pg-rate-completion" value="${compV}" placeholder="30" style="${inputCss}"></td>
-        <td style="white-space:nowrap">
-          <button class="btn btn-ghost pg-save-model" style="font-size:10.5px;padding:4px 9px">Simpan</button>
-          ${id ? `<button class="btn btn-ghost pg-del-model" style="font-size:10.5px;padding:4px 9px;color:var(--danger)">Hapus</button>` : ''}
-        </td>
+        <td>${promptCell}</td>
+        <td>${compCell}</td>
+        <td style="white-space:nowrap">${actionCell}</td>
       </tr>`;
   }
 
-  async function buildPengaturan() {
-    let data, pricingList;
-    try {
-      const [ru, rp] = await Promise.all([
-        fetch(`${BASE}/api/ai-usage`),
-        fetch(`${BASE}/api/settings/model-pricing`),
-      ]);
-      data = await ru.json();
-      pricingList = await rp.json();
-    } catch {
-      toast('Gagal memuat data penggunaan AI', 'err');
-      return;
-    }
-    if (data.error) { toast(data.error, 'err'); return; }
+  // ── Toggle mode kontrol (CRUD) — default disembunyikan agar tidak terlihat kasat mata ──
+  let pgEditMode  = localStorage.getItem('sw-pg-edit') === '1';
+  let pgLastUsage = null, pgLastPricing = null;
+
+  function applyPgEditModeUI() {
+    document.getElementById('pgBudgetEditRow').style.display = pgEditMode ? 'flex' : 'none';
+    document.getElementById('pgAddModelForm').style.display  = pgEditMode ? 'grid' : 'none';
+    document.getElementById('btnClearUsageLog').style.display = pgEditMode ? '' : 'none';
+    document.getElementById('pgModelActionsTh').textContent  = pgEditMode ? 'Aksi' : '';
+    document.getElementById('pgLogActionsTh').textContent    = pgEditMode ? 'Aksi' : '';
+    document.getElementById('pgToggleLabel').textContent     = pgEditMode ? 'Sembunyikan Kontrol' : 'Tampilkan Kontrol';
+    document.getElementById('btnToggleCrud').classList.toggle('btn-primary', pgEditMode);
+  }
+
+  document.getElementById('btnToggleCrud').addEventListener('click', () => {
+    pgEditMode = !pgEditMode;
+    localStorage.setItem('sw-pg-edit', pgEditMode ? '1' : '0');
+    renderPengaturan();
+  });
+
+  applyPgEditModeUI(); // set state awal tombol/kontrol sebelum halaman Pengaturan pertama kali dibuka
+
+  function renderPengaturan() {
+    applyPgEditModeUI();
+    const data = pgLastUsage, pricingList = pgLastPricing;
+    if (!data) return;
 
     document.getElementById('pgUsed').textContent      = fmtRupiah(data.used);
     document.getElementById('pgBudget').textContent    = fmtRupiah(data.budget);
@@ -2304,7 +2331,7 @@
     const modelBody = document.getElementById('pgModelBody');
     const rows = mergeModelRows(data.byModel, pricingList);
     modelBody.innerHTML = rows.length
-      ? rows.map(renderModelRow).join('')
+      ? rows.map(r => renderModelRow(r, pgEditMode)).join('')
       : `<tr><td colspan="7"><div class="empty" style="padding:16px"><p style="font-size:12px">Belum ada model terdaftar</p></div></td></tr>`;
 
     // Riwayat terbaru
@@ -2318,9 +2345,25 @@
           <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${l.model}</td>
           <td>${(l.totalTokens || 0).toLocaleString('id-ID')}</td>
           <td>${fmtRupiah(l.estimatedCostIDR)}</td>
-          <td><button class="btn btn-ghost pg-del-log" style="font-size:10.5px;padding:4px 9px;color:var(--danger)">Hapus</button></td>
+          <td>${pgEditMode ? `<button class="btn btn-ghost pg-del-log" style="font-size:10.5px;padding:4px 9px;color:var(--danger)">Hapus</button>` : ''}</td>
         </tr>`).join('');
     }
+  }
+
+  async function buildPengaturan() {
+    try {
+      const [ru, rp] = await Promise.all([
+        fetch(`${BASE}/api/ai-usage`),
+        fetch(`${BASE}/api/settings/model-pricing`),
+      ]);
+      pgLastUsage   = await ru.json();
+      pgLastPricing = await rp.json();
+    } catch {
+      toast('Gagal memuat data penggunaan AI', 'err');
+      return;
+    }
+    if (pgLastUsage.error) { toast(pgLastUsage.error, 'err'); return; }
+    renderPengaturan();
   }
 
   document.getElementById('btnRefreshUsage').addEventListener('click', buildPengaturan);
