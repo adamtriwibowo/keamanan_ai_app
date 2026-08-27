@@ -80,6 +80,9 @@ const {
   seedAiSettings,
   getAiBudget,
   setAiBudget,
+  getPercentOverride,
+  setPercentOverride,
+  clearPercentOverride,
 } = require("./src/config/aiPricing");
 
 // SSE — heartbeat untuk indikator koneksi sidebar
@@ -114,6 +117,7 @@ app.post("/api/analyze", async (req, res) => {
 app.get("/api/ai-usage", async (req, res) => {
   try {
     const budget = await getAiBudget();
+    const percentOverride = await getPercentOverride();
     const byModel = await AiUsageLog.aggregate([
       { $group: {
           _id:      "$model",
@@ -128,12 +132,14 @@ app.get("/api/ai-usage", async (req, res) => {
     const used          = byModel.reduce((s, m) => s + m.cost, 0);
     const totalRequests = byModel.reduce((s, m) => s + m.requests, 0);
     const totalTokens   = byModel.reduce((s, m) => s + m.tokens, 0);
+    const computedPercent = budget > 0 ? Math.min((used / budget) * 100, 100) : 0;
 
     res.json({
       budget,
       used,
-      remaining:    Math.max(budget - used, 0),
-      percentUsed:  budget > 0 ? Math.min((used / budget) * 100, 100) : 0,
+      remaining:       Math.max(budget - used, 0),
+      percentUsed:     percentOverride !== null ? percentOverride : computedPercent,
+      percentOverride, // null jika belum ada override manual (simulasi)
       totalRequests,
       totalTokens,
       byModel,
@@ -143,6 +149,30 @@ app.get("/api/ai-usage", async (req, res) => {
   } catch (err) {
     console.error("AI usage error:", err.message);
     res.status(500).json({ error: "Gagal mengambil data penggunaan AI" });
+  }
+});
+
+// ── PENGATURAN: CRUD SIMULASI % TERPAKAI (override manual, tidak memengaruhi angka Rp) ──
+app.put("/api/settings/ai-usage-percent", requireAuth, async (req, res) => {
+  try {
+    const value = Number(req.body.percent);
+    if (!Number.isFinite(value) || value < 0 || value > 100) {
+      return res.status(400).json({ error: "Persentase harus berupa angka 0-100" });
+    }
+    const saved = await setPercentOverride(value);
+    res.json({ percentOverride: saved });
+  } catch (err) {
+    console.error("Set percent override error:", err.message);
+    res.status(500).json({ error: "Gagal menyimpan simulasi persentase" });
+  }
+});
+
+app.delete("/api/settings/ai-usage-percent", requireAuth, async (req, res) => {
+  try {
+    await clearPercentOverride();
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Gagal menghapus simulasi persentase" });
   }
 });
 

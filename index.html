@@ -1344,6 +1344,13 @@
               <input id="pgBudgetInput" type="number" min="0" step="1000" placeholder="4000000">
             </div>
             <button class="btn btn-primary" id="btnSaveBudget" style="align-self:flex-end">Simpan Anggaran</button>
+
+            <div class="fg" style="flex:0 0 160px;gap:5px;margin-left:8px">
+              <label>% Terpakai (Simulasi)</label>
+              <input id="pgPercentInput" type="number" min="0" max="100" step="0.1" placeholder="otomatis">
+            </div>
+            <button class="btn btn-primary" id="btnSavePercent" style="align-self:flex-end">Simpan %</button>
+            <button class="btn btn-ghost" id="btnResetPercent" style="align-self:flex-end">Reset ke Otomatis</button>
           </div>
         </div>
       </div>
@@ -2319,10 +2326,14 @@
     document.getElementById('pgBar').style.width       = `${(data.percentUsed || 0).toFixed(1)}%`;
     document.getElementById('pgBar').style.background  =
       data.percentUsed >= 90 ? 'var(--danger)' : data.percentUsed >= 60 ? 'var(--orange)' : 'var(--accent)';
-    document.getElementById('pgPercent').textContent   = `${(data.percentUsed || 0).toFixed(1)}% terpakai`;
+    document.getElementById('pgPercent').textContent   =
+      `${(data.percentUsed || 0).toFixed(1)}% terpakai` + (data.percentOverride !== null ? ' (simulasi manual)' : '');
     document.getElementById('pgReqCount').textContent  = `${data.totalRequests || 0} request · ${(data.totalTokens || 0).toLocaleString('id-ID')} token`;
     if (document.activeElement?.id !== 'pgBudgetInput') {
       document.getElementById('pgBudgetInput').value = data.budget;
+    }
+    if (document.activeElement?.id !== 'pgPercentInput') {
+      document.getElementById('pgPercentInput').value = data.percentOverride !== null ? data.percentOverride : '';
     }
 
     // Rincian & tarif per model
@@ -2380,6 +2391,32 @@
       toast('Anggaran berhasil diperbarui', 'ok');
       buildPengaturan();
     } catch { toast('Gagal menyimpan anggaran', 'err'); }
+  });
+
+  // Simpan simulasi % terpakai (override manual, murni tampilan)
+  document.getElementById('btnSavePercent').addEventListener('click', async () => {
+    const percent = Number(document.getElementById('pgPercentInput').value);
+    if (!Number.isFinite(percent) || percent < 0 || percent > 100) { toast('Persentase harus 0-100', 'err'); return; }
+    try {
+      const r = await fetch(`${BASE}/api/settings/ai-usage-percent`, {
+        method: 'PUT', headers: authHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ percent }),
+      });
+      const d = await r.json();
+      if (!r.ok) { toast(d.error || 'Gagal menyimpan simulasi persentase', 'err'); return; }
+      toast('Simulasi % terpakai disimpan', 'ok');
+      buildPengaturan();
+    } catch { toast('Gagal menyimpan simulasi persentase', 'err'); }
+  });
+
+  // Reset % terpakai ke hitungan otomatis
+  document.getElementById('btnResetPercent').addEventListener('click', async () => {
+    try {
+      const r = await fetch(`${BASE}/api/settings/ai-usage-percent`, { method: 'DELETE', headers: authHeaders() });
+      if (!r.ok) { toast('Gagal mereset persentase', 'err'); return; }
+      toast('Persentase dikembalikan ke otomatis', 'ok');
+      buildPengaturan();
+    } catch { toast('Gagal mereset persentase', 'err'); }
   });
 
   // Tambah model baru

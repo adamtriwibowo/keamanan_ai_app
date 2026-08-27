@@ -1,7 +1,8 @@
 const AppSettings    = require("../models/appSettingsModel");
 const AiModelPricing = require("../models/aiModelPricingModel");
 
-const BUDGET_KEY = "ai_budget_idr";
+const BUDGET_KEY  = "ai_budget_idr";
+const PERCENT_KEY = "ai_usage_percent_override";
 const DEFAULT_BUDGET_IDR = 4_000_000;
 
 // Tarif fallback (Rp / 1000 token) kalau model belum punya entri di DB.
@@ -42,6 +43,26 @@ const setAiBudget = async (value) => {
   return Number(doc.value);
 };
 
+// % terpakai override manual — murni simulasi, tidak memengaruhi angka Rp
+// terpakai/sisa (yang tetap dihitung dari token riil). null = pakai hitungan otomatis.
+const getPercentOverride = async () => {
+  const doc = await AppSettings.findOne({ key: PERCENT_KEY }).lean();
+  return doc ? Number(doc.value) : null;
+};
+
+const setPercentOverride = async (value) => {
+  const doc = await AppSettings.findOneAndUpdate(
+    { key: PERCENT_KEY },
+    { key: PERCENT_KEY, value },
+    { upsert: true, new: true }
+  );
+  return Number(doc.value);
+};
+
+const clearPercentOverride = async () => {
+  await AppSettings.findOneAndDelete({ key: PERCENT_KEY });
+};
+
 const estimateCostIDR = async (model, promptTokens = 0, completionTokens = 0) => {
   const pricing = await AiModelPricing.findOne({ model }).lean();
   const rate = pricing || DEFAULT_RATE;
@@ -51,10 +72,14 @@ const estimateCostIDR = async (model, promptTokens = 0, completionTokens = 0) =>
 
 module.exports = {
   BUDGET_KEY,
+  PERCENT_KEY,
   DEFAULT_BUDGET_IDR,
   DEFAULT_MODEL_PRICING,
   seedAiSettings,
   getAiBudget,
   setAiBudget,
+  getPercentOverride,
+  setPercentOverride,
+  clearPercentOverride,
   estimateCostIDR,
 };
